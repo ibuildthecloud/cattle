@@ -1,0 +1,16 @@
+{
+    "collectionMethods" : [ "GET", "POST" ],
+    "resourceFields": {
+        "networkId": {
+            "type" : "reference[network]",
+            "includeInList" : false,
+            "required" : true
+        },
+        "networkAddress": {
+            "required" : true
+        },
+        "cidrSize": {
+            "required" : true
+        }
+    }
+}

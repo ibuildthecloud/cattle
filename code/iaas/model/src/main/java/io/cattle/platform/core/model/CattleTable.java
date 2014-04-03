@@ -11,7 +11,7 @@ package io.cattle.platform.core.model;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class CattleTable extends org.jooq.impl.SchemaImpl {
 
-	private static final long serialVersionUID = -1365924436;
+	private static final long serialVersionUID = -2120180111;
 
 	/**
 	 * The singleton instance of <code>cattle</code>
@@ -51,14 +51,20 @@ public class CattleTable extends org.jooq.impl.SchemaImpl {
 			io.cattle.platform.core.model.tables.ImageStoragePoolMapTable.IMAGE_STORAGE_POOL_MAP,
 			io.cattle.platform.core.model.tables.InstanceTable.INSTANCE,
 			io.cattle.platform.core.model.tables.InstanceHostMapTable.INSTANCE_HOST_MAP,
+			io.cattle.platform.core.model.tables.InstanceNetworkMapTable.INSTANCE_NETWORK_MAP,
+			io.cattle.platform.core.model.tables.IpAddressTable.IP_ADDRESS,
+			io.cattle.platform.core.model.tables.NetworkTable.NETWORK,
 			io.cattle.platform.core.model.tables.OfferingTable.OFFERING,
 			io.cattle.platform.core.model.tables.ProcessExecutionTable.PROCESS_EXECUTION,
 			io.cattle.platform.core.model.tables.ProcessInstanceTable.PROCESS_INSTANCE,
 			io.cattle.platform.core.model.tables.SettingTable.SETTING,
 			io.cattle.platform.core.model.tables.StoragePoolTable.STORAGE_POOL,
 			io.cattle.platform.core.model.tables.StoragePoolHostMapTable.STORAGE_POOL_HOST_MAP,
+			io.cattle.platform.core.model.tables.SubnetTable.SUBNET,
+			io.cattle.platform.core.model.tables.SubnetVnetMapTable.SUBNET_VNET_MAP,
 			io.cattle.platform.core.model.tables.TaskTable.TASK,
 			io.cattle.platform.core.model.tables.TaskInstanceTable.TASK_INSTANCE,
+			io.cattle.platform.core.model.tables.VnetTable.VNET,
 			io.cattle.platform.core.model.tables.VolumeTable.VOLUME,
 			io.cattle.platform.core.model.tables.VolumeStoragePoolMapTable.VOLUME_STORAGE_POOL_MAP,
 			io.cattle.platform.core.model.tables.ZoneTable.ZONE);
