@@ -361,7 +361,7 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
 
     protected HandlerResult runHandler(ProcessDefinition processDefinition, ProcessState state,
             EngineContext context, ProcessLogic handler) {
-        ProcessLogicExecutionLog processExecution = execution.newProcessLogicExecution(handler);
+        final ProcessLogicExecutionLog processExecution = execution.newProcessLogicExecution(handler);
         context.pushLog(processExecution);
         try {
             processExecution.setResourceValueBefore(state.convertData(state.getResource()));
@@ -401,6 +401,7 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
 
             return handlerResult;
         } catch ( ExecutionException e ) {
+            Idempotent.tempDisable();
             ExecutionExceptionHandler exceptionHandler = this.context.getExceptionHandler();
             if ( exceptionHandler != null ) {
                 exceptionHandler.handleException(e, state, this.context);

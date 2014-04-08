@@ -175,6 +175,10 @@
     </logger>
 -->
 
+    <logger name="org.apache.cloudstack.spring.module.locator.impl.ClasspathModuleDefinitionLocator" >
+        <level value="DEBUG" />
+    </logger>
+
     <logger name="org.jooq" >
         <level value="${jooqLevel}" />
     </logger>
