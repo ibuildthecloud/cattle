@@ -295,3 +295,46 @@ def test_virtual_machine_purge_subnet(admin_client, sim_context, subnet, vnet):
                                                 poolId=subnet_plain_id)
     assert addresses_len == len(addresses)
     addresses_len = len(addresses)
+
+
+def test_virtual_machine_restore_subnet(admin_client, sim_context, subnet, vnet):
+    image_uuid = sim_context['imageUuid']
+    subnet_plain_id = get_plain_id(admin_client, subnet)
+    addresses = admin_client.list_resource_pool(poolType='subnet',
+                                                poolId=subnet_plain_id)
+    addresses_len = len(addresses)
+
+    vm = admin_client.create_virtual_machine(subnetIds=[subnet.id],
+                                             imageUuid=image_uuid)
+    vm = admin_client.wait_success(vm)
+    assert vm.state == 'running'
+
+    addresses = admin_client.list_resource_pool(poolType='subnet',
+                                                poolId=subnet_plain_id)
+    assert addresses_len + 1 == len(addresses)
+    vm = admin_client.wait_success(vm.stop(remove=True))
+
+    assert vm.state == 'removed'
+    nic = vm.nics()[0]
+    ip_address = nic.ipAddresses()[0]
+    address = ip_address.address
+    assert ip_address.address.startswith('192.168')
+
+    vm = vm.restore()
+    assert vm.state == 'restoring'
+
+    vm = admin_client.wait_success(vm)
+    assert vm.state == 'stopped'
+
+    assert len(vm.nics()) == 1
+    nic = vm.nics()[0]
+    assert nic.state == 'inactive'
+
+    assert len(nic.ipAddresses()) == 1
+    ip_address = nic.ipAddresses()[0]
+    assert ip_address.state == 'active'
+
+    vm = admin_client.wait_success(vm.start())
+
+    assert vm.state == 'running'
+    assert vm.nics()[0].ipAddresses()[0].address == address

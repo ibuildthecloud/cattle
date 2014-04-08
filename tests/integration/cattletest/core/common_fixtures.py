@@ -261,6 +261,6 @@ def assert_required_fields(method, **kw):
 
 
 def get_plain_id(admin_client, obj):
-    ret = admin_client.list(obj.type, uuid=obj.uuid, _plainId=True)
+    ret = admin_client.list(obj.type, uuid=obj.uuid, _plainId='true')
     assert len(ret) == 1
     return ret[0].id
