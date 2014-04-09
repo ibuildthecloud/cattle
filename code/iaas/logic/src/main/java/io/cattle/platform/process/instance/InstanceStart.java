@@ -8,6 +8,7 @@ import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.InstanceHostMap;
 import io.cattle.platform.core.model.IpAddress;
 import io.cattle.platform.core.model.Nic;
+import io.cattle.platform.core.model.Port;
 import io.cattle.platform.core.model.Volume;
 import io.cattle.platform.engine.handler.HandlerResult;
 import io.cattle.platform.engine.process.ProcessInstance;
@@ -73,6 +74,14 @@ public class InstanceStart extends AbstractDefaultProcessHandler {
                 return stopOrRemove(state, instance, e);
             }
             throw e;
+        }
+
+        try {
+            stage = "post network";
+            postNetwork(instance);
+        } catch ( ExecutionException e ) {
+            log.error("Failed to {} for instance [{}]", stage, instance.getId());
+            return stopOrRemove(state, instance, e);
         }
 
         String ipAddress = getPrimaryIpAddress(instance);
@@ -158,6 +167,12 @@ public class InstanceStart extends AbstractDefaultProcessHandler {
     protected void network(Instance instance) {
         for ( Nic nic : getObjectManager().children(instance, Nic.class) ) {
             activate(nic, null);
+        }
+    }
+
+    protected void postNetwork(Instance instance) {
+        for ( Port port : getObjectManager().children(instance, Port.class) ) {
+            activate(port, null);
         }
     }
 

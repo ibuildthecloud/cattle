@@ -2,12 +2,15 @@ package io.cattle.platform.core.dao.impl;
 
 import static io.cattle.platform.core.model.tables.IpAddressNicMapTable.*;
 import static io.cattle.platform.core.model.tables.IpAddressTable.*;
+import static io.cattle.platform.core.model.tables.HostIpAddressMapTable.*;
 
 import java.util.List;
 
 import javax.inject.Inject;
 
 import io.cattle.platform.core.dao.IpAddressDao;
+import io.cattle.platform.core.model.Host;
+import io.cattle.platform.core.model.HostIpAddressMap;
 import io.cattle.platform.core.model.IpAddress;
 import io.cattle.platform.core.model.IpAddressNicMap;
 import io.cattle.platform.core.model.Nic;
@@ -62,6 +65,19 @@ public class IpAddressDaoImpl extends AbstractJooqDao implements IpAddressDao {
         return ipAddress;
     }
 
+    @Override
+    public IpAddress assignNewAddress(Host host, String ipAddress) {
+        IpAddress ipAddressObj = objectManager.create(IpAddress.class,
+                IP_ADDRESS.ADDRESS, ipAddress,
+                IP_ADDRESS.ACCOUNT_ID, host.getAccountId());
+
+        objectManager.create(HostIpAddressMap.class,
+                HOST_IP_ADDRESS_MAP.IP_ADDRESS_ID, ipAddressObj.getId(),
+                HOST_IP_ADDRESS_MAP.HOST_ID, host.getId());
+
+        return ipAddressObj;
+    }
+
     public ObjectManager getObjectManager() {
         return objectManager;
     }
@@ -70,5 +86,6 @@ public class IpAddressDaoImpl extends AbstractJooqDao implements IpAddressDao {
     public void setObjectManager(ObjectManager objectManager) {
         this.objectManager = objectManager;
     }
+
 
 }

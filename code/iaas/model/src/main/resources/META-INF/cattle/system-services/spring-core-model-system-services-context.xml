@@ -24,6 +24,7 @@
     <tx:advice id="IpAddressDaoImplAdvice" transaction-manager="CoreTransactionManager">
         <tx:attributes>
             <tx:method name="mapNewIpAddress" isolation="READ_COMMITTED" />
+            <tx:method name="assignNewAddress" isolation="READ_COMMITTED" />
         </tx:attributes>
     </tx:advice>
 
