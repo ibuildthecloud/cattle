@@ -325,7 +325,9 @@ def test_virtual_machine_restore_subnet(admin_client, sim_context, subnet,
     vm = vm.restore()
     assert vm.state == 'restoring'
 
+    print 'Before', vm
     vm = admin_client.wait_success(vm)
+    print 'After', vm
     assert vm.state == 'stopped'
 
     assert len(vm.nics()) == 1
