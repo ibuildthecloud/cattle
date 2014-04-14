@@ -12,33 +12,34 @@ import java.util.Set;
 public class HostVnetMatchConstraint implements Constraint {
 
     AllocatorDao allocatorDao;
+    long nicId;
 
     Map<Long,Set<Long>> vnetIdHostIds = new HashMap<Long, Set<Long>>();
 
-    public HostVnetMatchConstraint(AllocatorDao allocatorDao) {
+    public HostVnetMatchConstraint(long nicId, AllocatorDao allocatorDao) {
         super();
+        this.nicId = nicId;
         this.allocatorDao = allocatorDao;
     }
 
-
     @Override
     public boolean matches(AllocationAttempt attempt, AllocationCandidate candidate) {
-        for ( Long subnetId : candidate.getSubnetIds().values() ) {
-            Set<Long> hostIds = candidate.getHosts();
+        Long subnetId = candidate.getSubnetIds().get(nicId);
 
-            if ( subnetId != null && hostIds != null ) {
-                for ( long hostId : hostIds ) {
-                    Set<Long> validHostIds = vnetIdHostIds.get(subnetId);
-                    if ( validHostIds == null ) {
-                        validHostIds = new HashSet<Long>();
-                        validHostIds.addAll(allocatorDao.getHostsForSubnet(subnetId));
+        Set<Long> hostIds = candidate.getHosts();
 
-                        vnetIdHostIds.put(subnetId, validHostIds);
-                    }
+        if ( subnetId != null && hostIds != null ) {
+            for ( long hostId : hostIds ) {
+                Set<Long> validHostIds = vnetIdHostIds.get(subnetId);
+                if ( validHostIds == null ) {
+                    validHostIds = new HashSet<Long>();
+                    validHostIds.addAll(allocatorDao.getHostsForSubnet(subnetId));
 
-                    if ( validHostIds.size() > 0 && ! validHostIds.contains(hostId) ) {
-                        return false;
-                    }
+                    vnetIdHostIds.put(subnetId, validHostIds);
+                }
+
+                if ( validHostIds.size() > 0 && ! validHostIds.contains(hostId) ) {
+                    return false;
                 }
             }
         }
