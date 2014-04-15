@@ -212,6 +212,17 @@ public interface Instance extends java.io.Serializable {
 	@javax.persistence.Column(name = "zone_id", precision = 19)
 	public java.lang.Long getZoneId();
 
+	/**
+	 * Setter for <code>cattle.instance.agent_id</code>.
+	 */
+	public void setAgentId(java.lang.Long value);
+
+	/**
+	 * Getter for <code>cattle.instance.agent_id</code>.
+	 */
+	@javax.persistence.Column(name = "agent_id", precision = 19)
+	public java.lang.Long getAgentId();
+
 	// -------------------------------------------------------------------------
 	// FROM and INTO
 	// -------------------------------------------------------------------------

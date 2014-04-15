@@ -11,7 +11,7 @@ package io.cattle.platform.core.model.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class InstanceTable extends org.jooq.impl.TableImpl<io.cattle.platform.core.model.tables.records.InstanceRecord> {
 
-	private static final long serialVersionUID = 1945084131;
+	private static final long serialVersionUID = 1106938852;
 
 	/**
 	 * The singleton instance of <code>cattle.instance</code>
@@ -117,6 +117,11 @@ public class InstanceTable extends org.jooq.impl.TableImpl<io.cattle.platform.co
 	public final org.jooq.TableField<io.cattle.platform.core.model.tables.records.InstanceRecord, java.lang.Long> ZONE_ID = createField("zone_id", org.jooq.impl.SQLDataType.BIGINT, this, "");
 
 	/**
+	 * The column <code>cattle.instance.agent_id</code>.
+	 */
+	public final org.jooq.TableField<io.cattle.platform.core.model.tables.records.InstanceRecord, java.lang.Long> AGENT_ID = createField("agent_id", org.jooq.impl.SQLDataType.BIGINT, this, "");
+
+	/**
 	 * Create a <code>cattle.instance</code> table reference
 	 */
 	public InstanceTable() {
@@ -167,7 +172,7 @@ public class InstanceTable extends org.jooq.impl.TableImpl<io.cattle.platform.co
 	 */
 	@Override
 	public java.util.List<org.jooq.ForeignKey<io.cattle.platform.core.model.tables.records.InstanceRecord, ?>> getReferences() {
-		return java.util.Arrays.<org.jooq.ForeignKey<io.cattle.platform.core.model.tables.records.InstanceRecord, ?>>asList(io.cattle.platform.core.model.Keys.FK_INSTANCE__ACCOUNT_ID, io.cattle.platform.core.model.Keys.FK_INSTANCE__IMAGE_ID, io.cattle.platform.core.model.Keys.FK_INSTANCE__OFFERING_ID, io.cattle.platform.core.model.Keys.FK_INSTANCE__ZONE_ID);
+		return java.util.Arrays.<org.jooq.ForeignKey<io.cattle.platform.core.model.tables.records.InstanceRecord, ?>>asList(io.cattle.platform.core.model.Keys.FK_INSTANCE__ACCOUNT_ID, io.cattle.platform.core.model.Keys.FK_INSTANCE__IMAGE_ID, io.cattle.platform.core.model.Keys.FK_INSTANCE__OFFERING_ID, io.cattle.platform.core.model.Keys.FK_INSTANCE__ZONE_ID, io.cattle.platform.core.model.Keys.FK_INSTANCE__AGENT_ID);
 	}
 
 	/**
