@@ -1,0 +1,8 @@
+{
+    "resourceFields": {
+        "networkId": {
+            "required" : true,
+            "nullable" : false
+        }
+    }
+}
