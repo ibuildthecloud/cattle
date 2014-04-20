@@ -146,6 +146,17 @@ public interface NetworkService extends java.io.Serializable {
 	@javax.persistence.Column(name = "network_id", precision = 19)
 	public java.lang.Long getNetworkId();
 
+	/**
+	 * Setter for <code>cattle.network_service.network_service_provider_id</code>.
+	 */
+	public void setNetworkServiceProviderId(java.lang.Long value);
+
+	/**
+	 * Getter for <code>cattle.network_service.network_service_provider_id</code>.
+	 */
+	@javax.persistence.Column(name = "network_service_provider_id", precision = 19)
+	public java.lang.Long getNetworkServiceProviderId();
+
 	// -------------------------------------------------------------------------
 	// FROM and INTO
 	// -------------------------------------------------------------------------

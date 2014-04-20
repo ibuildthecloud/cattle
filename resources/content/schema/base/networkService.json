@@ -3,9 +3,6 @@
         "networkId": {
             "required" : true,
             "nullable" : false
-        },
-        "agentInstanceImageUuid": {
-            "type" : "string"
         }
     }
 }

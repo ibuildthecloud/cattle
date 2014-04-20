@@ -84,6 +84,8 @@
         "ipAddress.address" : "cr",
         "ipAddress.networkId" : "r",
 
+        "agentInstanceProvider.agentInstanceImageUuid" : "cru",
+
         "offering" : "",
 
         "processDefinition" : "r",

@@ -10,13 +10,13 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
         http://cattle.io/schemas/spring/extension http://cattle.io/schemas/spring/extension-1.0.xsd">
 
-    <bean class="io.cattle.platform.ipsechostnat.process.IpsecHostNatNicActivate" />
+<!--     <bean class="io.cattle.platform.ipsechostnat.process.IpsecHostNatNicActivate" /> -->
 
-    <bean id="IpsecHostNatTypes" class="io.cattle.platform.object.meta.TypeSet" >
-        <property name="typeNames">
-            <set>
-                <value>ipsecHostNatService,parent=networkService</value>
-            </set>
-        </property>
-    </bean>
+<!--     <bean id="IpsecHostNatTypes" class="io.cattle.platform.object.meta.TypeSet" > -->
+<!--         <property name="typeNames"> -->
+<!--             <set> -->
+<!--                 <value>ipsecHostNatService,parent=networkService</value> -->
+<!--             </set> -->
+<!--         </property> -->
+<!--     </bean> -->
 </beans>
