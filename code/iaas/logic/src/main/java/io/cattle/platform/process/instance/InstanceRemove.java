@@ -1,6 +1,8 @@
 package io.cattle.platform.process.instance;
 
+import io.cattle.platform.core.dao.GenericMapDao;
 import io.cattle.platform.core.model.Instance;
+import io.cattle.platform.core.model.InstanceHostMap;
 import io.cattle.platform.core.model.Nic;
 import io.cattle.platform.core.model.Volume;
 import io.cattle.platform.engine.handler.HandlerResult;
@@ -19,6 +21,7 @@ import javax.inject.Named;
 public class InstanceRemove extends AbstractDefaultProcessHandler {
 
     InstanceStop instanceStop;
+    GenericMapDao mapDao;
 
     @Override
     public HandlerResult handle(ProcessState state, ProcessInstance process) {
@@ -31,6 +34,10 @@ public class InstanceRemove extends AbstractDefaultProcessHandler {
         network(instance, state.getData());
 
         storage(instance, state.getData());
+
+        for ( InstanceHostMap map : mapDao.findToRemove(InstanceHostMap.class, Instance.class, instance.getId()) ) {
+            remove(map, state.getData());
+        }
 
         return new HandlerResult(result);
     }
@@ -62,6 +69,15 @@ public class InstanceRemove extends AbstractDefaultProcessHandler {
     @Inject
     public void setInstanceStop(InstanceStop instanceStop) {
         this.instanceStop = instanceStop;
+    }
+
+    public GenericMapDao getMapDao() {
+        return mapDao;
+    }
+
+    @Inject
+    public void setMapDao(GenericMapDao mapDao) {
+        this.mapDao = mapDao;
     }
 
 }
