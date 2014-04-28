@@ -53,13 +53,17 @@ call_curl()
 
 download_agent()
 {
+    set -e
     cleanup
 
     TEMP_DOWNLOAD=$(mktemp -d bootstrap.XXXXXXX)
     info Downloading agent "${CATTLE_CONFIG_URL}${CONTENT_URL}"
     call_curl --retry 5 ${CATTLE_CONFIG_URL}${CONTENT_URL} > $TEMP_DOWNLOAD/content
-    tar xzf $TEMP_DOWNLOAD/content -C $TEMP_DOWNLOAD || ( cat $TEMP_DOWNLOAD/content 1>&2 && exit 1 )
+    tar xzf $TEMP_DOWNLOAD/content -C $TEMP_DOWNLOAD
+    false
     bash $TEMP_DOWNLOAD/*/config.sh $INSTALL_ITEMS
+    echo $?
+    echo ok
 
     cleanup
 }
@@ -85,14 +89,5 @@ cd $CATTLE_HOME
 # Let scripts know its being ran during startup
 export CATTLE_AGENT_STARTUP=true
 
-echo '::askfirst:-/bin/sh' > /etc/inittab
-
 setup_config_url
-download_agent
-
-if [ "$$" = 1 ]; then
-    if [ ! -e /init ]; then
-        ln -s $(which busybox) /init
-    fi
-    exec /init
-fi
+download_agent || kill 1

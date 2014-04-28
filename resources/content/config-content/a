@@ -1,0 +1,36 @@
+{
+        "context": null,
+        "transitioningProgress": null,
+        "timeoutMillis": null,
+        "time": 1398374005395,
+        "data": {
+          "items": [
+            {
+              "checkInSync": true,
+              "increment": false,
+              "apply": false,
+              "requestedVersion": null,
+              "name": "services"
+            },
+            {
+              "checkInSync": true,
+              "increment": false,
+              "apply": false,
+              "requestedVersion": null,
+              "name": "services"
+            }
+          ],
+          "configUrl": "http://172.17.42.1:8080/v1"
+        },
+        "previousNames": null,
+        "previousIds": null,
+        "transitioningInternalMessage": null,
+        "id": "be33ce5b-2f97-424e-8b4b-e5518ed207ac",
+        "name": "config.update",
+        "replyTo": "config.update.reply",
+        "resourceId": "2",
+        "resourceType": "agent",
+        "publisher": null,
+        "transitioning": null,
+        "transitioningMessage": null
+      }

@@ -40,6 +40,35 @@ def test_network_create(admin_client):
 
     network = admin_client.wait_success(network)
     assert network.state == 'active'
+    assert network.macPrefix is not None
+    assert len(network.macPrefix) == 8
+    assert network.macPrefix.startswith('02:')
+
+    return network
+
+
+def test_network_purge(admin_client):
+    network = admin_client.create_network(isPublic=True)
+    network = admin_client.wait_success(network)
+    assert network.state == 'active'
+    assert network.macPrefix.startswith('02:')
+
+    network = admin_client.wait_success(network.deactivate())
+    assert network.state == 'inactive'
+
+    network = admin_client.wait_success(admin_client.delete(network))
+    assert network.state == 'removed'
+    assert network.macPrefix.startswith('02:')
+
+    prefix = network.macPrefix
+    items = admin_client.list_resource_pool(item=prefix)
+    assert len(items) == 1
+    network = admin_client.wait_success(network.purge())
+    assert network.state == 'purged'
+    assert network.macPrefix is None
+
+    items = admin_client.list_resource_pool(item=prefix)
+    assert len(items) == 0
 
     return network
 

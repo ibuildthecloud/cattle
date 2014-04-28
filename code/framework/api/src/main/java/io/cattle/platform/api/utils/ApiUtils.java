@@ -154,7 +154,7 @@ public class ApiUtils {
                     return null;
                 }
 
-                return new WrappedResource(idFormatter, schema, input, DataUtils.getFields(input));
+                return new WrappedResource(idFormatter, schema, input, new LinkedHashMap<String, Object>(DataUtils.getFields(input)));
             }
         });
 

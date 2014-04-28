@@ -51,6 +51,7 @@
         "network" : "r",
 
         "nic" : "r",
+        "nic.macAddress" : "r",
 
         "schema" : "r",
 

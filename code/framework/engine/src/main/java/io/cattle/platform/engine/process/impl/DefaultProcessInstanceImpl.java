@@ -414,7 +414,10 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
                 throw new ProcessExecutionExitException(MISSING_HANDLER_RESULT_FIELDS);
             }
 
-            state.applyData(resultData);
+            if ( resultData.size() > 0 ) {
+                state.applyData(resultData);
+            }
+
             processExecution.setResourceValueAfter(state.convertData(state.getResource()));
 
             return handlerResult;

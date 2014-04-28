@@ -3,62 +3,48 @@
     <property name="mediumtext" value="TEXT" dbms="postgresql" />
     <property name="mediumtext" value="MEDIUMTEXT" />
     <changeSet author="darren (generated)" id="dump1">
-        <createTable tableName="network_service_provider_instance_map">
-            <column autoIncrement="true" name="id" type="BIGINT">
-                <constraints primaryKey="true"/>
-            </column>
-            <column name="name" type="VARCHAR(255)"/>
-            <column name="kind" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="uuid" type="VARCHAR(128)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="description" type="VARCHAR(1024)"/>
-            <column name="state" type="VARCHAR(128)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="created" type="datetime"/>
-            <column name="removed" type="datetime"/>
-            <column name="remove_time" type="datetime"/>
-            <column name="data" type="TEXT"/>
-            <column name="network_service_provider_id" type="BIGINT"/>
-            <column name="instance_id" type="BIGINT"/>
-        </createTable>
+        <addColumn tableName="instance">
+            <column name="domain" type="VARCHAR(128)"/>
+        </addColumn>
     </changeSet>
     <changeSet author="darren (generated)" id="dump2">
-        <addForeignKeyConstraint baseColumnNames="instance_id" baseTableName="network_service_provider_instance_map" constraintName="fk_network_service_provider_instance_map__instance_id" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="instance"/>
+        <addColumn tableName="network">
+            <column name="domain" type="VARCHAR(128)"/>
+        </addColumn>
     </changeSet>
     <changeSet author="darren (generated)" id="dump3">
-        <addForeignKeyConstraint baseColumnNames="network_service_provider_id" baseTableName="network_service_provider_instance_map" constraintName="fk_nspim_network_service_provider_id" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="network_service_provider"/>
+        <addColumn tableName="nic">
+            <column name="mac_address" type="VARCHAR(128)"/>
+        </addColumn>
     </changeSet>
     <changeSet author="darren (generated)" id="dump4">
-        <addUniqueConstraint columnNames="uuid" constraintName="idx_network_service_provider_instance_map_uuid" deferrable="false" disabled="false" initiallyDeferred="false" tableName="network_service_provider_instance_map"/>
+        <addColumn tableName="resource_pool">
+            <column defaultValue="default" name="qualifier" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
     </changeSet>
     <changeSet author="darren (generated)" id="dump5">
-        <createIndex indexName="idx_network_service_provider_instance_map_name" tableName="network_service_provider_instance_map" unique="false">
-            <column name="name"/>
-        </createIndex>
+        <addColumn tableName="ip_address">
+            <column name="role" type="VARCHAR(128)"/>
+        </addColumn>
     </changeSet>
     <changeSet author="darren (generated)" id="dump6">
-        <createIndex indexName="idx_network_service_provider_instance_map_remove_time" tableName="network_service_provider_instance_map" unique="false">
-            <column name="remove_time"/>
-        </createIndex>
+        <addUniqueConstraint columnNames="pool_type, pool_id, qualifier, item" constraintName="idx_pool_item2" deferrable="false" disabled="false" initiallyDeferred="false" tableName="resource_pool"/>
     </changeSet>
     <changeSet author="darren (generated)" id="dump7">
-        <createIndex indexName="idx_network_service_provider_instance_map_removed" tableName="network_service_provider_instance_map" unique="false">
-            <column name="removed"/>
+        <createIndex indexName="idx_pool_owner2" tableName="resource_pool" unique="false">
+            <column name="pool_type"/>
+            <column name="pool_id"/>
+            <column name="qualifier"/>
+            <column name="owner_type"/>
+            <column name="owner_id"/>
         </createIndex>
     </changeSet>
     <changeSet author="darren (generated)" id="dump8">
-        <createIndex indexName="idx_network_service_provider_instance_map_state" tableName="network_service_provider_instance_map" unique="false">
-            <column name="state"/>
-        </createIndex>
+        <dropUniqueConstraint constraintName="idx_pool_item" tableName="resource_pool"/>
     </changeSet>
     <changeSet author="darren (generated)" id="dump9">
-        <dropForeignKeyConstraint baseTableName="network_service_provider" constraintName="fk_network_service_provider__instance_id"/>
-    </changeSet>
-    <changeSet author="darren (generated)" id="dump10">
-        <dropColumn columnName="instance_id" tableName="network_service_provider"/>
+        <dropIndex indexName="idx_pool_owner" tableName="resource_pool"/>
     </changeSet>
 </databaseChangeLog>
