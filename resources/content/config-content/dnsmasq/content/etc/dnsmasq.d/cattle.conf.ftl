@@ -116,7 +116,7 @@ except-interface=eth${nic.deviceNumber!0}
 </#list>
 # Or which to listen on by address (remember to include 127.0.0.1 if
 # you use this.)
-listen-address=${instance.data.fields.primaryIpAddress}
+#listen-address=
 # If you want dnsmasq to provide only DNS service on an interface,
 # configure it as shown above, and then use the following line to
 # disable DHCP on it.
@@ -172,7 +172,7 @@ domain=${domain}
 # a lease time. If you have more than one network, you will need to
 # repeat this for each network on which you want to supply DHCP
 # service.
-dhcp-range=${instance.data.fields.primaryIpAddress},static
+#dhcp-range=192.168.0.50,192.168.0.150,12h
 
 # This is an example of a DHCP range where the netmask is given. This
 # is needed for networks we reach the dnsmasq DHCP server via a relay

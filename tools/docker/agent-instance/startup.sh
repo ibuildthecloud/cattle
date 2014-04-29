@@ -1,6 +1,21 @@
 #!/bin/bash
 set -e
 
+cleanup()
+{
+    local exit=$?
+
+    if [ -e "$TEMP_DOWNLOAD" ]; then
+        rm -rf $TEMP_DOWNLOAD
+    fi
+
+    if [ "$exit" != "0" ]; then
+        kill 1
+    fi
+
+    return $exit
+}
+
 trap cleanup EXIT
 
 # This is copied from common/scripts.sh, if there is a change here
@@ -32,12 +47,6 @@ check_debug
 CONTENT_URL=/configcontent/configscripts
 INSTALL_ITEMS="configscripts agent-instance-startup"
 
-cleanup()
-{
-    if [ -e "$TEMP_DOWNLOAD" ]; then
-        rm -rf $TEMP_DOWNLOAD
-    fi
-}
 
 call_curl()
 {
@@ -53,19 +62,11 @@ call_curl()
 
 download_agent()
 {
-    set -e
-    cleanup
-
     TEMP_DOWNLOAD=$(mktemp -d bootstrap.XXXXXXX)
     info Downloading agent "${CATTLE_CONFIG_URL}${CONTENT_URL}"
     call_curl --retry 5 ${CATTLE_CONFIG_URL}${CONTENT_URL} > $TEMP_DOWNLOAD/content
     tar xzf $TEMP_DOWNLOAD/content -C $TEMP_DOWNLOAD
-    false
     bash $TEMP_DOWNLOAD/*/config.sh $INSTALL_ITEMS
-    echo $?
-    echo ok
-
-    cleanup
 }
 
 setup_config_url()
@@ -90,4 +91,4 @@ cd $CATTLE_HOME
 export CATTLE_AGENT_STARTUP=true
 
 setup_config_url
-download_agent || kill 1
+download_agent

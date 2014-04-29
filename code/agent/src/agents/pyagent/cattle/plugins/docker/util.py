@@ -59,7 +59,7 @@ def net_util(pid, ip=None, mac=None, device=None):
 
 
 def ns_exec(ctx, pid, input, *args, **kw):
-    cmd = [_NSENTER, '-m', '-u', '-i', '-p', '-t', str(pid),
+    cmd = [_NSENTER, '-m', '-u', '-i', '-n', '-p', '-t', str(pid),
            '--']
     cmd.extend(args)
     p = Popen(cmd, stdin=PIPE, stderr=PIPE, stdout=PIPE)

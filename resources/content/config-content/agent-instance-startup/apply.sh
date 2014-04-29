@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 . ${CATTLE_HOME:-/var/lib/cattle}/common/scripts.sh
 
@@ -25,5 +24,3 @@ done
 if [ -e /dev/shm ]; then
     touch /dev/shm/agent-instance-started
 fi
-
-SUCCESS=true

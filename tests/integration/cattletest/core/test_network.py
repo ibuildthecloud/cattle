@@ -210,6 +210,7 @@ def test_ip_address_create_no_address_available(admin_client, admin_account):
     assert '192.168.0.5' in ip_address_addresses
 
     ip_address = admin_client.create_ip_address(subnetId=subnet.id)
+    ip_address = admin_client.wait_success(ip_address)
     ip_address = admin_client.wait_transitioning(ip_address.activate())
 
     assert ip_address.state == 'inactive'

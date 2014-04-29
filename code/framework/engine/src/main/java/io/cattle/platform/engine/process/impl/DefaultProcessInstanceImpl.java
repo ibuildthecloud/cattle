@@ -266,11 +266,14 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
     }
 
     protected void runWithProcessLock() {
+        String previousState = null;
         boolean success = false;
         try {
             lockAcquired();
 
-            instanceContext.getState().reload();
+            ProcessState state = instanceContext.getState();
+
+            state.reload();
 
             preRunStateCheck();
 
@@ -280,12 +283,14 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
             }
 
             if ( instanceContext.getState().isStart() ) {
-                setTransitioning();
+                previousState = setTransitioning();
             }
 
             if ( schedule ) {
                 runScheduled();
             }
+
+            previousState = state.getState();
 
             runLogic();
 
@@ -294,16 +299,17 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
             success = true;
         } finally {
             if ( ! success && ! EngineContext.isNestedExecution() ) {
-                /* This is not so obvious why we do this.  If a process fails it may have done scheduled
+                /* This is not so obvious why we do this.  If a process fails it may have scheduled
                  * a compensating process.  That means the state changed under the hood and we should look
-                 * for that an possibly cancel this process.
+                 * for that as it possibly cancels this process.
                  *
                  * If the process is nested, we don't want to cancel because it will mask the exception
                  * being thrown and additionally there is no process to cancel because the process is really
                  * owned by the parent.  If we were to cancel a nested process, it will just look like a
                  * RuntimeException to the parent
                  */
-                assertState();
+                if ( previousState != null )
+                    assertState(previousState);
             }
         }
     }
@@ -329,6 +335,7 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
         boolean ran = false;
         final ProcessDefinition processDefinition = instanceContext.getProcessDefinition();
         final ProcessState state = instanceContext.getState();
+        final String previousState = state.getState();
 
         if ( instanceContext.getPhase().ordinal() < phase.ordinal() ) {
             final EngineContext context = EngineContext.getEngineContext();
@@ -354,7 +361,7 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
         }
 
         if ( ran ) {
-            assertState();
+            assertState(previousState);
         } else {
             if ( phase == ProcessPhase.HANDLER_DONE && processDefinition.getHandlerRequiredResultData().size() > 0 ) {
                 log.error("No handlers ran, but there are required fields to be set");
@@ -463,9 +470,8 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
         instanceContext.setPhase(ProcessPhase.DONE);
     }
 
-    protected void assertState() {
+    protected void assertState(String previousState) {
         ProcessState state = instanceContext.getState();
-        String previousState = state.getState();
 
         state.reload();
         String newState = state.getState();
@@ -495,7 +501,7 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
         return record;
     }
 
-    protected void setTransitioning() {
+    protected String setTransitioning() {
         ProcessState state = instanceContext.getState();
 
         String previousState = state.getState();
@@ -504,6 +510,8 @@ public class DefaultProcessInstanceImpl implements ProcessInstance {
                 record.getResourceId());
         execution.getTransitions().add(new ProcessStateTransition(previousState, newState, "transitioning", now()));
         publishChanged(schedule);
+
+        return newState;
     }
 
     protected void setDone() {
