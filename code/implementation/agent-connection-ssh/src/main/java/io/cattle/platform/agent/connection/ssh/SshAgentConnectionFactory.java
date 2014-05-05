@@ -42,6 +42,7 @@ import org.apache.sshd.client.SftpClient;
 import org.apache.sshd.client.SftpClient.Attributes;
 import org.apache.sshd.client.SftpClient.Handle;
 import org.apache.sshd.client.SftpClient.OpenMode;
+import org.apache.sshd.client.channel.ChannelExec;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.future.OpenFuture;
 import org.apache.sshd.common.Channel;
@@ -146,18 +147,20 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
             String script = copyBootStrap(session);
             int port = setForwarding(session);
             log.info("Allocated random port [{}] on [{}]", port, opts.getHost());
-            EofAwareChannelExec exec = callBootStrap(agent, session, String.format("%s --port %d --ip %s", script, port, hostIp));
+            ChannelExec exec = callBootStrap(agent, session, String.format("%s --port %d --ip %s", script, port, hostIp));
 
             final SshAgentConnection sshAgent = new SshAgentConnection(agent.getId(), agent.getUri(), eventService, this, session, exec, port);
             success = true;
             connections.add(sshAgent);
 
+            /*
             exec.onEof(new Runnable() {
                 @Override
                 public void run() {
                     sshAgent.close();
                 }
             });
+            */
 
             CloseListener listener = new CloseListener(sshAgent);
             session.addListener(listener);
@@ -195,7 +198,10 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
         connections.remove(agentConnection);
     }
 
-    protected EofAwareChannelExec callBootStrap(Agent agent, ClientSession session, String script) throws IOException {
+    protected ChannelExec callBootStrap(Agent agent, ClientSession session, String script) throws IOException {
+        return session.createExecChannel(script);
+        /*
+
         EofAwareChannelExec exec = new EofAwareChannelExec(script);
         exec.setOut(new LogOutputStream(log, "{}", agent.getId().toString(), false));
         exec.setErr(new LogOutputStream(log, "{}", agent.getId().toString(), true));
@@ -209,6 +215,7 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
         }
 
         return exec;
+        */
     }
 
     protected String copyBootStrap(ClientSession session) throws IOException {
@@ -283,10 +290,14 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
         SshClient client = SshClient.setUpDefaultClient();
         client.setTcpipForwarderFactory(new DefaultTcpipForwarderFactory());
         client.setTcpipForwardingFilter(new ReverseConnectAllowFilter());
+        /*
         client.setIoServiceFactory(new SharedExecutorMinaServiceServiceFactory(executorService));
         client.setIoServiceFactory(new MinaServiceFactory());
         client.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(
                 new EofClosingTcpipServerChannel.EofClosingTcpipServerChannelFactory(executorService)));
+                */
+        client.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(
+                new EofClosingTcpipServerChannel.EofClosingTcpipServerChannelFactory()));
 
         client.start();
 

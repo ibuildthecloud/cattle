@@ -40,13 +40,13 @@ public class ClientKeyPairProvider extends AbstractKeyPairProvider implements In
     private static final byte[] HEADER = new byte[] {'s', 's', 'h', '-', 'r', 's', 'a'};
     private static final String SSH_RSA_FORMAT = "ssh-rsa %s cattle@cattle";
 
-    volatile KeyPair[] keys = null;
+    volatile List<KeyPair> keys = null;
     SshAgentDao agentDao;
     LockManager lockManager;
     ExecutorService executorService;
 
     @Override
-    protected KeyPair[] loadKeys() {
+    public Iterable<KeyPair> loadKeys() {
        if ( keys != null ) {
             return keys;
         }
@@ -68,7 +68,7 @@ public class ClientKeyPairProvider extends AbstractKeyPairProvider implements In
         keys = read(keyStrings);
     }
 
-    protected KeyPair[] read(List<String[]> keyStrings) throws Exception {
+    protected List<KeyPair> read(List<String[]> keyStrings) throws Exception {
         List<KeyPair> keyPairs = new ArrayList<KeyPair>();
 
         for ( String[] keyString : keyStrings ) {
@@ -76,7 +76,7 @@ public class ClientKeyPairProvider extends AbstractKeyPairProvider implements In
             keyPairs.add(pair);
         }
 
-        return keyPairs.toArray(new KeyPair[keyPairs.size()]);
+        return keyPairs;
     }
 
     protected KeyPair readKeyPair(String key) throws Exception {

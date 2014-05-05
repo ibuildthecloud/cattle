@@ -14,14 +14,6 @@ public class EofClosingTcpipServerChannel extends TcpipServerChannel {
     Executor executor;
 
     public static class EofClosingTcpipServerChannelFactory implements NamedFactory<Channel> {
-
-        Executor executor;
-
-        public EofClosingTcpipServerChannelFactory(Executor executor) {
-            super();
-            this.executor = executor;
-        }
-
         @Override
         public String getName() {
             return "forwarded-tcpip";
@@ -29,13 +21,12 @@ public class EofClosingTcpipServerChannel extends TcpipServerChannel {
 
         @Override
         public Channel create() {
-            return new EofClosingTcpipServerChannel(Type.Forwarded, executor);
+            return new EofClosingTcpipServerChannel(Type.Forwarded);
         }
     }
 
-    public EofClosingTcpipServerChannel(Type type, Executor executor) {
+    public EofClosingTcpipServerChannel(Type type) {
         super(type);
-        this.executor = executor;
     }
 
     @Override
@@ -46,21 +37,6 @@ public class EofClosingTcpipServerChannel extends TcpipServerChannel {
         if ( ioSession != null ) {
             ioSession.close(true);
         }
-    }
-
-    @Override
-    public CloseFuture close(boolean immediately) {
-        return super.close(immediately).addListener(new SshFutureListener<CloseFuture>() {
-            @Override
-            public void operationComplete(CloseFuture sshFuture) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        getConnector().dispose();
-                    }
-                });
-            }
-        });
     }
 
 }

@@ -35,11 +35,14 @@ import org.apache.sshd.common.SshException;
 import org.apache.sshd.common.SshdSocketAddress;
 import org.apache.sshd.common.TcpipForwarder;
 import org.apache.sshd.common.forward.TcpipClientChannel;
+import org.apache.sshd.common.future.CloseFuture;
 import org.apache.sshd.common.future.SshFutureListener;
 import org.apache.sshd.common.io.IoAcceptor;
 import org.apache.sshd.common.io.IoHandler;
 import org.apache.sshd.common.io.IoSession;
+import org.apache.sshd.common.session.ConnectionService;
 import org.apache.sshd.common.util.Buffer;
+import org.apache.sshd.common.util.CloseableUtils;
 import org.apache.sshd.common.util.Readable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,14 +56,16 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTcpipForwarder.class);
 
+    private final ConnectionService service;
     private final Session session;
     private final Map<Integer, SshdSocketAddress> localToRemote = new HashMap<Integer, SshdSocketAddress>();
     private final Map<Integer, SshdSocketAddress> remoteToLocal = new HashMap<Integer, SshdSocketAddress>();
     private final Set<SshdSocketAddress> localForwards = new HashSet<SshdSocketAddress>();
     protected IoAcceptor acceptor;
 
-    public DefaultTcpipForwarder(Session session) {
-        this.session = session;
+    public DefaultTcpipForwarder(ConnectionService service) {
+        this.service = service;
+        this.session = service.getSession();
     }
 
     //
@@ -80,7 +85,6 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
         }
         SshdSocketAddress bound = doBind(local);
         localToRemote.put(bound.getPort(), remote);
-
         return bound;
     }
 
@@ -96,7 +100,7 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
 
     @Override
     public synchronized SshdSocketAddress startRemotePortForwarding(SshdSocketAddress remote, SshdSocketAddress local) throws IOException {
-        Buffer buffer = session.createBuffer(SshConstants.Message.SSH_MSG_GLOBAL_REQUEST, 0);
+        Buffer buffer = session.createBuffer(SshConstants.SSH_MSG_GLOBAL_REQUEST);
         buffer.putString("tcpip-forward");
         buffer.putBoolean(true);
         buffer.putString(remote.getHostName());
@@ -123,7 +127,7 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
     @Override
     public synchronized void stopRemotePortForwarding(SshdSocketAddress remote) throws IOException {
         if (remoteToLocal.remove(remote.getPort()) != null) {
-            Buffer buffer = session.createBuffer(SshConstants.Message.SSH_MSG_GLOBAL_REQUEST, 0);
+            Buffer buffer = session.createBuffer(SshConstants.SSH_MSG_GLOBAL_REQUEST);
             buffer.putString("cancel-tcpip-forward");
             buffer.putBoolean(false);
             buffer.putString(remote.getHostName());
@@ -167,7 +171,7 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
     public synchronized void initialize() {
         if (this.acceptor == null) {
             this.acceptor = session.getFactoryManager().getIoServiceFactory()
-                    .createAcceptor(session.getFactoryManager(), this);
+                    .createAcceptor(this);
         }
     }
 
@@ -176,6 +180,20 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
         if (acceptor != null) {
             acceptor.dispose();
             acceptor = null;
+        }
+    }
+
+    @Override
+    public CloseFuture close(boolean immediately) {
+        IoAcceptor a;
+        synchronized (this) {
+            a = acceptor;
+            acceptor = null;
+        }
+        if (a != null) {
+            return a.close(immediately);
+        } else {
+            return CloseableUtils.closed();
         }
     }
 
@@ -194,13 +212,13 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
             channel = new TcpipClientChannel(TcpipClientChannel.Type.Forwarded, session, null);
         }
         session.setAttribute(TcpipClientChannel.class, channel);
-        this.session.registerChannel(channel);
+        this.service.registerChannel(channel);
         channel.open().addListener(new SshFutureListener<OpenFuture>() {
             @Override
             public void operationComplete(OpenFuture future) {
                 Throwable t = future.getException();
                 if (t != null) {
-                    DefaultTcpipForwarder.this.session.unregisterChannel(channel);
+                    DefaultTcpipForwarder.this.service.unregisterChannel(channel);
                     channel.close(false);
                 }
             }
@@ -211,7 +229,7 @@ public class DefaultTcpipForwarder implements TcpipForwarder, IoHandler {
     public void sessionClosed(IoSession session) throws Exception {
         TcpipClientChannel channel = (TcpipClientChannel) session.getAttribute(TcpipClientChannel.class);
         if (channel != null) {
-            LOGGER.debug("Session closed, will now close the channel");
+            LOGGER.debug("IoSession {} closed, will now close the channel", session);
             channel.close(false);
         }
     }

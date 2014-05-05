@@ -148,6 +148,10 @@
         <level value="${rootLevel}" />
     </logger>
 
+    <logger name="org.apache.sshd">
+        <level value="DEBUG" />
+    </logger>
+
     <logger name="io.cattle.platform.agent.connection.ssh.EofAwareChannelExec" >
         <level value="${otherLevel}" />
     </logger>

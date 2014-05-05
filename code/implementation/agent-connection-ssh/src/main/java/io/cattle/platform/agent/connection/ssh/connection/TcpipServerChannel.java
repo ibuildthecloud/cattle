@@ -103,7 +103,7 @@ public class TcpipServerChannel extends AbstractServerChannel {
         SshdSocketAddress address = null;
         switch (type) {
             case Direct:    address = new SshdSocketAddress(hostToConnect, portToConnect); break;
-            case Forwarded: address = getSession().getTcpipForwarder().getForwardedPort(portToConnect); break;
+            case Forwarded: address = service.getTcpipForwarder().getForwardedPort(portToConnect); break;
         }
         final ForwardingFilter filter = getSession().getFactoryManager().getTcpipForwardingFilter();
         if (address == null || filter == null || !filter.canConnect(address, getSession())) {
@@ -112,11 +112,11 @@ public class TcpipServerChannel extends AbstractServerChannel {
             return f;
         }
 
-        out = new ChannelOutputStream(this, remoteWindow, log, SshConstants.Message.SSH_MSG_CHANNEL_DATA);
+        out = new ChannelOutputStream(this, remoteWindow, log, SshConstants.SSH_MSG_CHANNEL_DATA);
         IoHandler handler = new IoHandler() {
             @Override
             public void messageReceived(IoSession session, Readable message) throws Exception {
-                if (closing.get()) {
+                if (state.get() != OPENED) {
                     log.debug("Ignoring write to channel {} in CLOSING state", id);
                 } else {
                     Buffer buffer = new Buffer();
@@ -138,7 +138,7 @@ public class TcpipServerChannel extends AbstractServerChannel {
             }
         };
         connector = getSession().getFactoryManager().getIoServiceFactory()
-                .createConnector(getSession().getFactoryManager(), handler);
+                .createConnector(handler);
         IoConnectFuture future = connector.connect(address.toInetSocketAddress());
         future.addListener(new SshFutureListener<IoConnectFuture>() {
             @Override
@@ -196,22 +196,15 @@ public class TcpipServerChannel extends AbstractServerChannel {
 
     @Override
     protected void doWriteData(byte[] data, int off, int len) throws IOException {
-        ioSession.write(new Buffer(data, off, len));
+        // Make sure we copy the data as the incoming buffer may be reused
+        Buffer buf = new Buffer(data, off, len);
+        buf = new Buffer(buf.getCompactData());
+        ioSession.write(buf);
     }
 
     @Override
     protected void doWriteExtendedData(byte[] data, int off, int len) throws IOException {
         throw new UnsupportedOperationException(type + "Tcpip channel does not support extended data");
-    }
-
-    @Override
-    public void handleRequest(Buffer buffer) throws IOException {
-        log.info("Received SSH_MSG_CHANNEL_REQUEST on channel {}", id);
-        String type = buffer.getString();
-        log.info("Received channel request: {}", type);
-        buffer = session.createBuffer(SshConstants.Message.SSH_MSG_CHANNEL_FAILURE, 0);
-        buffer.putInt(recipient);
-        writePacket(buffer);
     }
 
     public IoConnector getConnector() {

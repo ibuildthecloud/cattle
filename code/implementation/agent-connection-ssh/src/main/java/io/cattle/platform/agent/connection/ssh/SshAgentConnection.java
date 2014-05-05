@@ -6,7 +6,7 @@ import io.cattle.platform.eventing.EventService;
 
 import org.apache.sshd.ClientSession;
 import org.apache.sshd.client.channel.ChannelExec;
-import org.apache.sshd.common.Session.State;
+//import org.apache.sshd.common.Session.State;
 
 public class SshAgentConnection extends AgentEventingConnection implements AgentConnection {
 
@@ -38,7 +38,8 @@ public class SshAgentConnection extends AgentEventingConnection implements Agent
             return false;
         }
 
-        return session.getState() == State.Running;
+        //return session.getState() == State.Running;
+        return true;
     }
 
     public ClientSession getSession() {

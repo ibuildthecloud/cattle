@@ -22,7 +22,7 @@ public class CloseListener implements SessionListener, SshFutureListener<OpenFut
     }
 
     @Override
-    public void sessionChanged(Session session) {
+    public void sessionEvent(Session sesssion, Event event) {
     }
 
     @Override
