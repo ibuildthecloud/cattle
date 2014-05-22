@@ -256,6 +256,17 @@ public interface Instance extends java.io.Serializable {
 	@javax.persistence.Column(name = "first_running")
 	public java.util.Date getFirstRunning();
 
+	/**
+	 * Setter for <code>cattle.instance.token</code>.
+	 */
+	public void setToken(java.lang.String value);
+
+	/**
+	 * Getter for <code>cattle.instance.token</code>.
+	 */
+	@javax.persistence.Column(name = "token", length = 255)
+	public java.lang.String getToken();
+
 	// -------------------------------------------------------------------------
 	// FROM and INTO
 	// -------------------------------------------------------------------------

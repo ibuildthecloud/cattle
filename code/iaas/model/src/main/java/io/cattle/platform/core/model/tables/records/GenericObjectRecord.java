@@ -13,7 +13,7 @@ package io.cattle.platform.core.model.tables.records;
 @javax.persistence.Table(name = "generic_object", schema = "cattle")
 public class GenericObjectRecord extends org.jooq.impl.UpdatableRecordImpl<io.cattle.platform.core.model.tables.records.GenericObjectRecord> implements io.cattle.platform.db.jooq.utils.TableRecordJaxb, org.jooq.Record12<java.lang.Long, java.lang.String, java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Date, java.util.Date, java.util.Date, java.util.Map<String,Object>, java.lang.String>, io.cattle.platform.core.model.GenericObject {
 
-	private static final long serialVersionUID = -1174770343;
+	private static final long serialVersionUID = 58038622;
 
 	/**
 	 * Setter for <code>cattle.generic_object.id</code>.
@@ -214,7 +214,7 @@ public class GenericObjectRecord extends org.jooq.impl.UpdatableRecordImpl<io.ca
 	/**
 	 * Getter for <code>cattle.generic_object.key</code>.
 	 */
-	@javax.persistence.Column(name = "key", length = 128)
+	@javax.persistence.Column(name = "key", length = 255)
 	@Override
 	public java.lang.String getKey() {
 		return (java.lang.String) getValue(11);

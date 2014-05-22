@@ -1,0 +1,30 @@
+
+DROP TABLE IF EXISTS `ip_assocation`;
+CREATE TABLE `ip_assocation` (
+  `id` bigint(19) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `account_id` bigint(19) DEFAULT NULL,
+  `kind` varchar(255) NOT NULL,
+  `uuid` varchar(128) NOT NULL,
+  `description` varchar(1024) DEFAULT NULL,
+  `state` varchar(128) NOT NULL,
+  `created` datetime DEFAULT NULL,
+  `removed` datetime DEFAULT NULL,
+  `remove_time` datetime DEFAULT NULL,
+  `data` text,
+  `ip_address_id` bigint(19) DEFAULT NULL,
+  `child_ip_address_id` bigint(19) DEFAULT NULL,
+  `role` varchar(255) DEFAULT NULL,
+  KEY `idx_ip_assocation_name` (`name`),
+  KEY `idx_ip_assocation_removed` (`removed`),
+  UNIQUE KEY `idx_ip_assocation_uuid` (`uuid`),
+  KEY `idx_ip_assocation_remove_time` (`remove_time`),
+  KEY `idx_ip_assocation_state` (`state`),
+  KEY `fk_ip_assocation_account_id` (`account_id`),
+  CONSTRAINT `fk_ip_assocation__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  KEY `fk_ip_assocation_ip_address_id` (`ip_address_id`),
+  CONSTRAINT `fk_ip_assocation__ip_address_id` FOREIGN KEY (`ip_address_id`) REFERENCES `ip_address` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  KEY `fk_ip_assocation_child_ip_address_id` (`child_ip_address_id`),
+  CONSTRAINT `fk_ip_assocation__child_ip_address_id` FOREIGN KEY (`child_ip_address_id`) REFERENCES `ip_address` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;

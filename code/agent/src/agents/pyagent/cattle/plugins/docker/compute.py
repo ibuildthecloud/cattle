@@ -15,11 +15,20 @@ log = logging.getLogger('docker')
 
 
 def _is_running(container):
-    return container is not None and container['Status'].startswith('Up')
+    if container is None:
+        return False
+
+    client = docker_client()
+    inspect = client.inspect_container(container)
+
+    try:
+        return inspect['State']['Running']
+    except KeyError:
+        return False
 
 
 def _is_stopped(container):
-    return container is None or container['Status'].startswith('Exit')
+    return not _is_running(container)
 
 
 class DockerCompute(KindBasedMixin, BaseComputeDriver):
@@ -235,12 +244,17 @@ class DockerCompute(KindBasedMixin, BaseComputeDriver):
             docker_ip = inspect['NetworkSettings']['IPAddress']
             if existing.get('Ports') is not None:
                 for port in existing['Ports']:
-                    if 'PrivatePort' in port:
+                    if 'PublicPort' in port and 'PrivatePort' not in port:
+                        # Remove after docker 0.12/1.0 is released
+                        private_port = '{0}/{1}'.format(port['PublicPort'],
+                                                        port['Type'])
+                        docker_ports[private_port] = None
+                    elif 'PublicPort' in port:
                         private_port = '{0}/{1}'.format(port['PrivatePort'],
                                                         port['Type'])
                         docker_ports[private_port] = str(port['PublicPort'])
                     else:
-                        private_port = '{0}/{1}'.format(port['PublicPort'],
+                        private_port = '{0}/{1}'.format(port['PrivatePort'],
                                                         port['Type'])
                         docker_ports[private_port] = None
 
