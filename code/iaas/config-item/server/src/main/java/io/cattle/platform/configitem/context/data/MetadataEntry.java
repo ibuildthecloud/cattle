@@ -1,15 +1,35 @@
 package io.cattle.platform.configitem.context.data;
 
+import io.cattle.platform.core.model.Credential;
 import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.IpAddress;
+import io.cattle.platform.core.model.Network;
 import io.cattle.platform.core.model.Nic;
+import io.cattle.platform.core.model.Subnet;
+import io.cattle.platform.core.model.Volume;
 
 public class MetadataEntry {
 
     Instance instance;
     Nic nic;
-    IpAddress ipAddress;
-    IpAddress publicIpAddress;
+    IpAddress localIp;
+    IpAddress publicIp;
+    Volume volume;
+    Credential credential;
+    Network network;
+    Subnet subnet;
+
+    public MetadataEntry(Instance instance, Nic nic, IpAddress localIp, IpAddress publicIp, Volume volume, Credential credential, Network network, Subnet subnet) {
+        super();
+        this.instance = instance;
+        this.nic = nic;
+        this.localIp = localIp;
+        this.publicIp = publicIp;
+        this.volume = volume;
+        this.credential = credential;
+        this.network = network;
+        this.subnet = subnet;
+    }
 
     public Instance getInstance() {
         return instance;
@@ -27,20 +47,52 @@ public class MetadataEntry {
         this.nic = nic;
     }
 
-    public IpAddress getIpAddress() {
-        return ipAddress;
+    public IpAddress getLocalIp() {
+        return localIp;
     }
 
-    public void setIpAddress(IpAddress ipAddress) {
-        this.ipAddress = ipAddress;
+    public void setLocalIp(IpAddress localIp) {
+        this.localIp = localIp;
     }
 
-    public IpAddress getPublicIpAddress() {
-        return publicIpAddress;
+    public IpAddress getPublicIp() {
+        return publicIp;
     }
 
-    public void setPublicIpAddress(IpAddress publicIpAddress) {
-        this.publicIpAddress = publicIpAddress;
+    public void setPublicIp(IpAddress publicIp) {
+        this.publicIp = publicIp;
+    }
+
+    public Volume getVolume() {
+        return volume;
+    }
+
+    public void setVolume(Volume volume) {
+        this.volume = volume;
+    }
+
+    public Credential getCredential() {
+        return credential;
+    }
+
+    public void setCredential(Credential credential) {
+        this.credential = credential;
+    }
+
+    public Network getNetwork() {
+        return network;
+    }
+
+    public void setNetwork(Network network) {
+        this.network = network;
+    }
+
+    public Subnet getSubnet() {
+        return subnet;
+    }
+
+    public void setSubnet(Subnet subnet) {
+        this.subnet = subnet;
     }
 
 }

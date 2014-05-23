@@ -1,0 +1,230 @@
+diff --git a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/MetadataDao.java b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/MetadataDao.java
+index ffc6b11..6ff4bc2 100644
+--- a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/MetadataDao.java
++++ b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/MetadataDao.java
+@@ -1,11 +1,12 @@
+ package io.cattle.platform.configitem.context.dao;
+ 
++import io.cattle.platform.configitem.context.data.MetadataEntry;
+ import io.cattle.platform.core.model.Instance;
+ 
+ import java.util.List;
+ 
+ public interface MetadataDao {
+ 
+-    public List<?> getMetaData(Instance agentInstance);
++    List<MetadataEntry> getMetaData(Instance agentInstance);
+ 
+ }
+diff --git a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/impl/MetadataDaoImpl.java b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/impl/MetadataDaoImpl.java
+index d2365c6..1df8190 100644
+--- a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/impl/MetadataDaoImpl.java
++++ b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/dao/impl/MetadataDaoImpl.java
+@@ -1,27 +1,97 @@
+ package io.cattle.platform.configitem.context.dao.impl;
+ 
+-import java.util.List;
+-
++import static io.cattle.platform.core.model.tables.InstanceTable.*;
++import static io.cattle.platform.core.model.tables.IpAddressNicMapTable.*;
++import static io.cattle.platform.core.model.tables.IpAddressTable.*;
++import static io.cattle.platform.core.model.tables.IpAssocationTable.*;
++import static io.cattle.platform.core.model.tables.NicTable.*;
++import static io.cattle.platform.core.model.tables.VnetTable.*;
+ import io.cattle.platform.configitem.context.dao.MetadataDao;
+ import io.cattle.platform.configitem.context.data.MetadataEntry;
++import io.cattle.platform.core.constants.IpAddressConstants;
++import io.cattle.platform.core.constants.NetworkServiceConstants;
++import io.cattle.platform.core.dao.NetworkDao;
+ import io.cattle.platform.core.model.Instance;
++import io.cattle.platform.core.model.IpAddress;
++import io.cattle.platform.core.model.NetworkService;
++import io.cattle.platform.core.model.Nic;
++import io.cattle.platform.core.model.Vnet;
++import io.cattle.platform.core.model.tables.InstanceTable;
++import io.cattle.platform.core.model.tables.IpAddressTable;
++import io.cattle.platform.core.model.tables.NicTable;
++import io.cattle.platform.core.model.tables.records.VnetRecord;
+ import io.cattle.platform.db.jooq.dao.impl.AbstractJooqDao;
+ import io.cattle.platform.db.jooq.mapper.MultiRecordMapper;
+ 
++import java.util.Collections;
++import java.util.List;
++
++import org.jooq.Record;
++
+ public class MetadataDaoImpl extends AbstractJooqDao implements MetadataDao {
+ 
++    NetworkDao networkDao;
++
+     @Override
+-    public List<?> getMetaData(Instance agentInstance) {
++    public List<MetadataEntry> getMetaData(Instance agentInstance) {
++        List<? extends NetworkService> services = networkDao.getAgentInstanceNetworkService(agentInstance.getId(), NetworkServiceConstants.KIND_METADATA);
++
++        if ( services.size() == 0 ) {
++            return Collections.emptyList();
++        }
++
++        Record any = create()
++                .select(VNET.fields())
++                .from(VNET)
++                .join(NIC)
++                    .on(NIC.VNET_ID.eq(VNET.ID))
++                .where(VNET.NETWORK_ID.eq(services.get(0).getNetworkId())
++                        .and(NIC.INSTANCE_ID.eq(agentInstance.getId())))
++                .fetchAny();
++
++        if ( any.size() == 0 ) {
++            return Collections.emptyList();
++        }
++
++        Vnet vnet = any.into(VnetRecord.class);
++
+         MultiRecordMapper<MetadataEntry> mapper = new MultiRecordMapper<MetadataEntry>() {
+             @Override
+             protected MetadataEntry map(List<Object> input) {
+-                // TODO Auto-generated method stub
+-                return null;
++                return new MetadataEntry((Instance)input.get(0),
++                        (Nic)input.get(1),
++                        (IpAddress)input.get(2),
++                        (IpAddress)input.get(3));
+             }
+-        });
++        };
++
++        InstanceTable instance = mapper.add(INSTANCE);
++        NicTable nic = mapper.add(NIC);
++        IpAddressTable primaryIp = mapper.add(IP_ADDRESS);
++        IpAddressTable publicIp = mapper.add(IP_ADDRESS);
+ 
+-        // TODO Auto-generated method stub
+-        return null;
++        return create()
++            .select(mapper.fields())
++            .from(nic)
++            .join(instance)
++                .on(nic.INSTANCE_ID.eq(instance.ID))
++            .leftOuterJoin(IP_ADDRESS_NIC_MAP)
++                .on(IP_ADDRESS_NIC_MAP.NIC_ID.eq(nic.ID))
++            .leftOuterJoin(primaryIp)
++                .on(IP_ADDRESS_NIC_MAP.IP_ADDRESS_ID.eq(primaryIp.ID))
++            .leftOuterJoin(IP_ASSOCATION)
++                .on(IP_ASSOCATION.CHILD_IP_ADDRESS_ID.eq(primaryIp.ID))
++            .leftOuterJoin(publicIp)
++                .on(IP_ASSOCATION.IP_ADDRESS_ID.eq(publicIp.ID))
++            .where(nic.VNET_ID.eq(vnet.getId())
++                    .and(primaryIp.ROLE.eq(IpAddressConstants.ROLE_PRIMARY))
++                    .and(publicIp.ROLE.eq(IpAddressConstants.ROLE_PRIMARY))
++                    .and(nic.REMOVED.isNull())
++                    .and(IP_ADDRESS_NIC_MAP.REMOVED.isNull())
++                    .and(IP_ASSOCATION.REMOVED.isNull())
++                    .and(publicIp.REMOVED.isNull())
++                    .and(primaryIp.REMOVED.isNull()))
++            .fetch().map(mapper);
+     }
+ 
+-}
++}
+\ No newline at end of file
+diff --git a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/data/MetadataEntry.java b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/data/MetadataEntry.java
+index 2729635..3326b5c 100644
+--- a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/data/MetadataEntry.java
++++ b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/data/MetadataEntry.java
+@@ -8,8 +8,16 @@ public class MetadataEntry {
+ 
+     Instance instance;
+     Nic nic;
+-    IpAddress ipAddress;
+-    IpAddress publicIpAddress;
++    IpAddress localIp;
++    IpAddress publicIp;
++
++    public MetadataEntry(Instance instance, Nic nic, IpAddress localIp, IpAddress publicIp) {
++        super();
++        this.instance = instance;
++        this.nic = nic;
++        this.localIp = localIp;
++        this.publicIp = publicIp;
++    }
+ 
+     public Instance getInstance() {
+         return instance;
+@@ -27,20 +35,20 @@ public class MetadataEntry {
+         this.nic = nic;
+     }
+ 
+-    public IpAddress getIpAddress() {
+-        return ipAddress;
++    public IpAddress getLocalIp() {
++        return localIp;
+     }
+ 
+-    public void setIpAddress(IpAddress ipAddress) {
+-        this.ipAddress = ipAddress;
++    public void setLocalIp(IpAddress localIp) {
++        this.localIp = localIp;
+     }
+ 
+-    public IpAddress getPublicIpAddress() {
+-        return publicIpAddress;
++    public IpAddress getPublicIp() {
++        return publicIp;
+     }
+ 
+-    public void setPublicIpAddress(IpAddress publicIpAddress) {
+-        this.publicIpAddress = publicIpAddress;
++    public void setPublicIp(IpAddress publicIp) {
++        this.publicIp = publicIp;
+     }
+ 
+ }
+diff --git a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/impl/NetworkInfoFactory.java b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/impl/NetworkInfoFactory.java
+index 2c5710c..f18bb7e 100644
+--- a/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/impl/NetworkInfoFactory.java
++++ b/code/iaas/config-item/server/src/main/java/io/cattle/platform/configitem/context/impl/NetworkInfoFactory.java
+@@ -1,6 +1,5 @@
+ package io.cattle.platform.configitem.context.impl;
+ 
+-import io.cattle.platform.archaius.util.ArchaiusUtil;
+ import io.cattle.platform.configitem.context.dao.NetworkInfoDao;
+ import io.cattle.platform.configitem.context.data.NetworkServiceInfo;
+ import io.cattle.platform.configitem.server.model.ConfigItem;
+@@ -22,13 +21,9 @@ import java.util.Set;
+ import javax.inject.Inject;
+ import javax.inject.Named;
+ 
+-import com.netflix.config.DynamicStringListProperty;
+-
+ @Named
+ public class NetworkInfoFactory extends AbstractAgentBaseContextFactory {
+ 
+-    public static final DynamicStringListProperty ITEMS = ArchaiusUtil.getList("item.context.network.info.items");
+-
+     NetworkInfoDao networkInfo;
+     IpAddressDao ipAddressDao;
+ 
+diff --git a/code/iaas/model/src/main/java/io/cattle/platform/core/constants/IpAddressConstants.java b/code/iaas/model/src/main/java/io/cattle/platform/core/constants/IpAddressConstants.java
+index eab2a6d..6e51147 100644
+--- a/code/iaas/model/src/main/java/io/cattle/platform/core/constants/IpAddressConstants.java
++++ b/code/iaas/model/src/main/java/io/cattle/platform/core/constants/IpAddressConstants.java
+@@ -3,5 +3,6 @@ package io.cattle.platform.core.constants;
+ public class IpAddressConstants {
+ 
+     public static final String ROLE_PRIMARY = "primary";
++    public static final String ROLE_PUBLIC = "public";
+ 
+ }
+diff --git a/code/iaas/model/src/main/java/io/cattle/platform/core/constants/NetworkServiceConstants.java b/code/iaas/model/src/main/java/io/cattle/platform/core/constants/NetworkServiceConstants.java
+index 6f17e39..053dc96 100644
+--- a/code/iaas/model/src/main/java/io/cattle/platform/core/constants/NetworkServiceConstants.java
++++ b/code/iaas/model/src/main/java/io/cattle/platform/core/constants/NetworkServiceConstants.java
+@@ -5,6 +5,7 @@ public class NetworkServiceConstants {
+     public static final String KIND_DNS = "dnsService";
+     public static final String KIND_DHCP = "dhcpService";
+     public static final String KIND_LINK = "linkService";
++    public static final String KIND_METADATA = "metadataService";
+     public static final String KIND_IPSEC_TUNNEL = "ipsecTunnelService";
+     public static final String KIND_PORT_SERVICE = "portService";
+ 

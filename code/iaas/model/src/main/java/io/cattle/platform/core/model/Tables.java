@@ -44,6 +44,11 @@ public class Tables {
 	public static final io.cattle.platform.core.model.tables.CredentialTable CREDENTIAL = io.cattle.platform.core.model.tables.CredentialTable.CREDENTIAL;
 
 	/**
+	 * The table cattle.credential_instance_map
+	 */
+	public static final io.cattle.platform.core.model.tables.CredentialInstanceMapTable CREDENTIAL_INSTANCE_MAP = io.cattle.platform.core.model.tables.CredentialInstanceMapTable.CREDENTIAL_INSTANCE_MAP;
+
+	/**
 	 * The table cattle.data
 	 */
 	public static final io.cattle.platform.core.model.tables.DataTable DATA = io.cattle.platform.core.model.tables.DataTable.DATA;
