@@ -31,6 +31,9 @@
         <property name="adminAuthProvider" ref="DefaultAuthorizationProvider" />
     </bean>
 
+    <bean class="io.cattle.platform.iaas.api.dot.DotWriter" />
+    <bean class="io.cattle.platform.iaas.api.instance.dot.LinkDot" />
+
     <!-- Start Handlers -->
     <bean class="io.cattle.platform.iaas.api.request.handler.Scripts" >
         <property name="handlers" value="#{extensionManager.list('scripts.handler')}" />

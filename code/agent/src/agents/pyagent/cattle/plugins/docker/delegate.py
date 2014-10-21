@@ -79,14 +79,6 @@ class DockerDelegate(BaseHandler):
                       instanceData.uuid)
             return
 
-        try:
-            # Optimization for empty config.updates, should really find a
-            # better way to do this
-            if event.name == 'config.update' and len(event.data.items) == 0:
-                return reply(event, None, parent=req)
-        except:
-            pass
-
         progress = Progress(event, parent=req)
         exit_code, output, data = container_exec(ip, instanceData.token, event)
 

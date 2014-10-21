@@ -71,6 +71,7 @@ if __name__ == '__main__':
     client = from_env()
     if len(sys.argv) == 1:
         for pi in client.list_process_instance(sort='startTime', order='desc',
+                                               endTime_null=True,
                                                limit=30):
             print_pi(pi)
     else:

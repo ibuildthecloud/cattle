@@ -143,7 +143,11 @@ public class ConfigItemStatusManagerImpl implements ConfigItemStatusManager {
         options.withRetryCallback(new RetryCallback() {
             @Override
             public Event beforeRetry(Event event) {
-                Event updatedEvent = getEvent(request);
+                ConfigUpdate updatedEvent = getEvent(request);
+                if ( updatedEvent.getData().getItems().size() == 0 ) {
+                    throw new ItemsUpToDateException();
+                }
+
                 EventVO<Object> newEvent = new EventVO<Object>(event);
                 newEvent.setData(updatedEvent.getData());
                 return newEvent;
@@ -242,7 +246,12 @@ public class ConfigItemStatusManagerImpl implements ConfigItemStatusManager {
 
     @Override
     public void waitFor(ConfigUpdateRequest request) {
-        AsyncUtils.get(whenReady(request));
+        try{
+            AsyncUtils.get(whenReady(request));
+        } catch ( ItemsUpToDateException e ) {
+            System.out.println("!!");
+            // Ignore
+        }
     }
 
     @Override
@@ -282,7 +291,7 @@ public class ConfigItemStatusManagerImpl implements ConfigItemStatusManager {
                     public void onFailure(Throwable t) {
                         if ( t instanceof TimeoutException ) {
                             log.info("Timeout {} item(s) {} on agent [{}]", migration ? "migrating" : "updating", entry.getValue(), agentId);
-                        } else {
+                        } else if ( ! (t instanceof ItemsUpToDateException) ) {
                             log.error("Error {} item(s) {} on agent [{}]", migration ? "migrating" : "updating", entry.getValue(), agentId, t);
                         }
                     }

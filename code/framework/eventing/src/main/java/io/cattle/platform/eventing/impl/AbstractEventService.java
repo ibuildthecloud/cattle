@@ -1,6 +1,7 @@
 package io.cattle.platform.eventing.impl;
 
 import io.cattle.platform.archaius.util.ArchaiusUtil;
+import io.cattle.platform.async.retry.CancelRetryException;
 import io.cattle.platform.async.retry.Retry;
 import io.cattle.platform.async.retry.RetryTimeoutService;
 import io.cattle.platform.async.utils.AsyncUtils;
@@ -310,7 +311,13 @@ public abstract class AbstractEventService implements EventService {
                 if ( retryCallback == null ) {
                     requestToSend = request;
                 } else {
-                    requestToSend = retryCallback.beforeRetry(request);
+                    try {
+                        requestToSend = retryCallback.beforeRetry(request);
+                    } catch ( Throwable e ) {
+                        future.setException(e);
+                        throw new CancelRetryException();
+                    }
+
                     if ( requestToSend == null ) {
                         requestToSend = request;
                     }

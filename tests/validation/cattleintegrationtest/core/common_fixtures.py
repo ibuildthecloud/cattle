@@ -8,7 +8,7 @@ import logging
 
 log = logging.getLogger()
 
-URL = os.environ.get('CATTLE_TEST_URL', 'fill in')
+URL = os.environ.get('CATTLE_TEST_URL', 'http://54.183.42.197:9080')
 
 DEFAULT_TIMEOUT = 45
 TEST_IMAGE_UUID = 'docker:cattle/test-agent:v7'

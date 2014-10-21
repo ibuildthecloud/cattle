@@ -43,4 +43,6 @@ public class InstanceConstants {
     public static final String ON_STOP_RESTART = "restart";
     public static final String ON_STOP_REMOVE = "remove";
 
+    public static final String LINK_LINK_DOT = "linkDot";
+
 }
