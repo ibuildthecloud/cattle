@@ -8,4 +8,11 @@
         <relativePath>../app-parent/pom.xml</relativePath>
     </parent>
     <packaging>war</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>io.cattle</groupId>
+            <artifactId>cattle-docker-native-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>

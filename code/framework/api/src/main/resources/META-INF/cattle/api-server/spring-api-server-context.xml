@@ -19,7 +19,7 @@
         <property name="latest" value="v1" />
     </bean>
 
-    <bean class="io.github.ibuildthecloud.gdapi.servlet.ApiRequestFilterDelegate" >
+    <bean id="ApiRequestFilterDelegate" class="io.github.ibuildthecloud.gdapi.servlet.ApiRequestFilterDelegate" >
         <property name="schemaFactory" ref="CoreSchemaFactory" />
         <property name="handlers" value="#{extensionManager.list('api.request.handler')}" />
         <property name="version">

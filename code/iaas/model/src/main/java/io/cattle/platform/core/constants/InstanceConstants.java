@@ -3,6 +3,7 @@ package io.cattle.platform.core.constants;
 public class InstanceConstants {
 
     public static final String TYPE = "instance";
+    public static final String TYPE_CONTAINER = "container";
 
     public static final String FIELD_AGENT_INSTANCE = "agentInstance";
     public static final String FIELD_COUNT = "count";
@@ -28,6 +29,8 @@ public class InstanceConstants {
 
     public static final String REMOVE_OPTION = "remove";
     public static final String DEALLOCATE_OPTION = "deallocateFromHost";
+
+    public static final String DATA_DOCKER_INSPECT = "dockerInspect";
 
     public static final String PROCESS_START = "instance.start";
     public static final String PROCESS_STOP = "instance.stop";

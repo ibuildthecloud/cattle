@@ -1,0 +1,35 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:extension="http://cattle.io/schemas/spring/extension"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+        http://cattle.io/schemas/spring/extension http://cattle.io/schemas/spring/extension-1.0.xsd">
+
+    <bean id="ApiRequestFilterDelegate" class="io.github.ibuildthecloud.gdapi.servlet.ApiRequestFilterDelegate" >
+        <property name="schemaFactory" ref="CoreSchemaFactory" />
+        <property name="handlers" >
+            <list>
+                <bean class="io.cattle.platform.iaas.api.auth.impl.ApiAuthenticator" >
+                    <property name="accountLookups" value="#{extensionManager.list('account.lookup')}" />
+                    <property name="authorizationProviders" value="#{extensionManager.list('authorization.provider')}" />
+                </bean>
+                <bean class="io.cattle.platform.docker.api.handler.ContainerHandler" >
+                    <property name="resourceHandler" ref="ResourceManagerRequestHandler" />
+                </bean>
+                <bean class="io.cattle.platform.docker.api.handler.JsonResponseHandler" />
+                <bean class="io.cattle.platform.api.handler.DeferredActionsHandler" />
+            </list>
+        </property>
+        <property name="version" value="v1.15" />
+        <property name="parser">
+            <bean class="io.cattle.platform.api.parser.ApiRequestParser" />
+        </property>
+        <property name="idFormatter" value="#{extensionManager.first('id.formatter', 'io.github.ibuildthecloud.gdapi.id.IdFormatter')}" />
+    </bean>
+
+</beans>
