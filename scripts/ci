@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+cd $(dirname $0)
+
+./clean
+
+export DOCKER_DRIVER=vfs
+export RUNTIME_DIR=../../../runtime/ci/
+export RUNTIME_DIR_CLEAN=true
+export CATTLE_LOGBACK_ROOT_LEVEL=warn
+#export CATTLE_IDEMPOTENT_CHECKS=false
+
+
+if [ -x "$(which wrapdocker)" ]; then
+    wrapdocker >/tmp/docker.log 2>&1
+fi
+
+DEV_HOST=localhost:8081 ../tools/development/register-boot2docker.sh &
+
+./build
+./run --background
+./test
