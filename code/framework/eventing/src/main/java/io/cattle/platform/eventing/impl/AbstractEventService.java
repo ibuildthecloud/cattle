@@ -31,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.ObjectPool;
@@ -244,8 +245,8 @@ public abstract class AbstractEventService implements EventService {
 
     protected EventCallOptions defaultCallOptions() {
         return new EventCallOptions()
-            .withRetry(DEFAULT_RETRIES.get())
-            .withTimeoutMillis(DEFAULT_TIMEOUT.get());
+        .withRetry(DEFAULT_RETRIES.get())
+        .withTimeoutMillis(DEFAULT_TIMEOUT.get());
     }
 
     @Override
@@ -453,6 +454,7 @@ public abstract class AbstractEventService implements EventService {
     }
 
     @Inject
+    @Named("CoreExecutorService")
     public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }

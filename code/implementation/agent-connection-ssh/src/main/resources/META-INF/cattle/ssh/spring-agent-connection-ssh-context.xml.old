@@ -11,7 +11,7 @@
     <bean class="io.cattle.platform.agent.connection.ssh.SshAgentConnectionFactory" >
         <property name="executorService" ref="CoreExecutorService" />
     </bean>
-    <bean class="io.cattle.platform.agent.connection.ssh.dao.impl.SshAgentDaoImpl" />
+    <bean id="SshAgentDao" class="io.cattle.platform.agent.connection.ssh.dao.impl.SshAgentDaoImpl" />
     <bean class="io.cattle.platform.agent.connection.ssh.ClientKeyPairProvider" >
         <property name="executorService" ref="CoreExecutorService" />
     </bean>

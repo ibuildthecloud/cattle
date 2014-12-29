@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.cloudstack.managed.context.NoExceptionRunnable;
 import org.apache.sshd.common.keyprovider.AbstractKeyPairProvider;
@@ -34,7 +35,7 @@ public class ClientKeyPairProvider extends AbstractKeyPairProvider implements In
 
     @Override
     protected KeyPair[] loadKeys() {
-       if ( keys != null ) {
+        if ( keys != null ) {
             return keys;
         }
 
@@ -136,6 +137,7 @@ public class ClientKeyPairProvider extends AbstractKeyPairProvider implements In
     }
 
     @Inject
+    @Named("CoreExecutorService")
     public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }

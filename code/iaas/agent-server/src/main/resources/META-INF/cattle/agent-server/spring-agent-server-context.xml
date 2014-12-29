@@ -25,7 +25,9 @@
     <bean class="io.cattle.platform.agent.server.group.impl.AgentGroupManagerImpl" />
 
     <bean class="io.cattle.platform.agent.server.ping.dao.impl.PingDaoImpl" />
-    <bean class="io.cattle.platform.agent.server.ping.impl.PingMonitorImpl" />
+    <bean class="io.cattle.platform.agent.server.ping.impl.PingMonitorImpl" >
+        <property name="executorService" ref="CoreListeningExecutorService" />
+    </bean>
     <bean class="io.cattle.platform.agent.server.resource.impl.AgentResourcesMonitorImpl" />
 
     <extension:discover class="io.cattle.platform.agent.server.connection.AgentConnectionFactory" />

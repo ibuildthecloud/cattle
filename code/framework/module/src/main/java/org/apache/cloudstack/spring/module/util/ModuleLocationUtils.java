@@ -27,6 +27,9 @@ public class ModuleLocationUtils {
     private static final String OVERRIDE_CONTEXT_LOCATION = "classpath*:%s/%s/*context-override.xml";
     private static final String DEFAULTS_LOCATION = "classpath*:%s/%s/*defaults.properties";
 
+    private static final String CONFIG_CLASSES = "classpath*:%s/%s/config-classes*";
+    private static final String INHERITABLE_CONFIG_CLASSES = "classpath*:%s/%s/inheritable-config-classes*";
+
     public static String getModulesLocation(String baseDir) {
         return String.format(ALL_MODULE_PROPERTIES, baseDir);
     }
@@ -49,5 +52,13 @@ public class ModuleLocationUtils {
 
     public static String getDefaultsLocation(String baseDir, String name) {
         return String.format(DEFAULTS_LOCATION, baseDir, name);
+    }
+
+    public static String getConfigClasses(String baseDir, String name) {
+        return String.format(CONFIG_CLASSES, baseDir, name);
+    }
+
+    public static String getInheritableConfigClasses(String baseDir, String name) {
+        return String.format(INHERITABLE_CONFIG_CLASSES, baseDir, name);
     }
 }

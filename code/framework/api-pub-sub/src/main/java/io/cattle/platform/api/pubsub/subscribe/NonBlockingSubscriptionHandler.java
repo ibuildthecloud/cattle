@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -244,6 +245,7 @@ public class NonBlockingSubscriptionHandler implements SubscriptionHandler {
     }
 
     @Inject
+    @Named("CoreExecutionService")
     public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }

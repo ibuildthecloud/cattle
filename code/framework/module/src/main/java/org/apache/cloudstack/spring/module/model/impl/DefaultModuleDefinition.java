@@ -18,8 +18,11 @@
  */
 package org.apache.cloudstack.spring.module.model.impl;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -38,115 +41,147 @@ public class DefaultModuleDefinition implements ModuleDefinition {
 
     public static final String NAME = "name";
     public static final String PARENT = "parent";
-        
+    public static final String CONFIG_CLASSES = "config.classes";
+    public static final String INHERITABLE_CONFIG_CLASSES = "inheritable.config.classes";
+
     String name;
     String baseDir;
     String parent;
     Resource moduleProperties;
     ResourcePatternResolver resolver;
     boolean valid;
-    
+
     List<Resource> configLocations;
     List<Resource> contextLocations;
     List<Resource> inheritableContextLocations;
     List<Resource> overrideContextLocations;
+    List<Class<?>> configClasses = new ArrayList<>();
+    List<Class<?>> inheritableConfigClasses = new ArrayList<>();
     Map<String, ModuleDefinition> children = new TreeMap<String, ModuleDefinition>();
-    
+
     public DefaultModuleDefinition(String baseDir, Resource moduleProperties, ResourcePatternResolver resolver) {
         this.baseDir = baseDir;
         this.resolver = resolver;
         this.moduleProperties = moduleProperties;
     }
-    
+
     public void init() throws IOException {
-        
+
         if ( ! moduleProperties.exists() ) {
             return;
         }
-        
-        resolveNameAndParent();
-        
+
+        resolveProperties();
+
         contextLocations = Arrays.asList(resolver.getResources(ModuleLocationUtils.getContextLocation(baseDir, name)));
         configLocations = Arrays.asList(resolver.getResources(ModuleLocationUtils.getDefaultsLocation(baseDir, name)));
         inheritableContextLocations = Arrays.asList(resolver.getResources(ModuleLocationUtils.getInheritableContextLocation(baseDir, name)));
         overrideContextLocations = Arrays.asList(resolver.getResources(ModuleLocationUtils.getOverrideContextLocation(baseDir, name)));
 
+        loadClasses(configClasses, Arrays.asList(resolver.getResources(ModuleLocationUtils.getConfigClasses(baseDir, name))));
+        loadClasses(inheritableConfigClasses, Arrays.asList(resolver.getResources(ModuleLocationUtils.getInheritableConfigClasses(baseDir, name))));
+
         valid = true;
     }
-    
-    protected void resolveNameAndParent() throws IOException {
+
+    protected void resolveProperties() throws IOException {
         InputStream is = null;
-        
+
         try {
             is = moduleProperties.getInputStream();
             Properties props = new Properties();
             props.load(is);
-            
+
             name = props.getProperty(NAME);
             parent = props.getProperty(PARENT);
-            
+
             if ( ! StringUtils.hasText(name) ) {
                 throw new IOException("Missing name property in [" + location() + "]");
             }
-            
+
             if ( ! StringUtils.hasText(parent) ) {
                 parent = null;
             }
-            
+
             checkNameMatchesSelf();
         } finally {
             IOUtils.closeQuietly(is);
         }
     }
-    
+
+    protected void loadClasses(List<Class<?>> classList, List<Resource> resources) throws IOException {
+        for ( Resource resource : resources ) {
+            try(BufferedReader rd = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
+                String line = null;
+                while ( (line = rd.readLine()) != null ) {
+                    if ( StringUtils.hasText(line) ) {
+                        try {
+                            Class<?> clz = Class.forName(line.trim());
+                            classList.add(clz);
+                        } catch (ClassNotFoundException e) {
+                            throw new IllegalArgumentException("Failed to load class from [" + resource + "]", e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     protected void checkNameMatchesSelf() throws IOException {
         String expectedLocation = ModuleLocationUtils.getModuleLocation(baseDir, name);
         Resource self = resolver.getResource(expectedLocation);
-        
+
         if ( ! self.exists() ) {
             throw new IOException("Resource [" + location() + "] is expected to exist at [" +
                     expectedLocation + "] please ensure the name property is correct");
         }
-        
+
         String moduleUrl = moduleProperties.getURL().toExternalForm();
         String selfUrl = self.getURL().toExternalForm();
-            
+
         if ( ! moduleUrl.equals(selfUrl) ) {
             throw new IOException("Resource [" + location() + "] and [" +
-                    self.getURL() + "] do not appear to be the same resource, " + 
+                    self.getURL() + "] do not appear to be the same resource, " +
                     "please ensure the name property is correct or that the " +
                     "module is not defined twice");
         }
     }
-    
+
     private String location() throws IOException {
         return moduleProperties.getURL().toString();
     }
-    
+
+    @Override
     public void addChild(ModuleDefinition def) {
         children.put(def.getName(), def);
     }
-    
+
+    @Override
     public Collection<ModuleDefinition> getChildren() {
         return children.values();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getParentName() {
         return parent;
     }
 
+    @Override
     public List<Resource> getConfigLocations() {
         return configLocations;
     }
 
+    @Override
     public List<Resource> getContextLocations() {
         return contextLocations;
     }
 
+    @Override
     public List<Resource> getInheritableContextLocations() {
         return inheritableContextLocations;
     }
@@ -156,13 +191,24 @@ public class DefaultModuleDefinition implements ModuleDefinition {
         return overrideContextLocations;
     }
 
+    @Override
     public boolean isValid() {
         return valid;
     }
 
+    @Override
     public ClassLoader getClassLoader() {
         return resolver.getClassLoader();
     }
 
+    @Override
+    public List<Class<?>> getConfigClasses() {
+        return configClasses;
+    }
+
+    @Override
+    public List<Class<?>> getInheritableConfigClasses() {
+        return inheritableConfigClasses;
+    }
 
 }

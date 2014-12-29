@@ -11,6 +11,8 @@
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
 
-    <bean id="PurgeMonitorImpl" class="io.cattle.platform.object.purge.impl.PurgeMonitorImpl" />
+    <bean id="PurgeMonitorImpl" class="io.cattle.platform.object.purge.impl.PurgeMonitorImpl" >
+        <property name="schemaFactory" ref="CoreSchemaFactory" />
+    </bean>
 
 </beans>

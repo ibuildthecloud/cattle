@@ -14,21 +14,26 @@
     <bean id="DefaultObjectMetaDataManager" class="io.cattle.platform.object.meta.impl.DefaultObjectMetaDataManager" >
         <property name="typeSets" value="#{extensionManager.list('type.set')}" />
         <property name="processDefinitions" value="#{extensionManager.list('process.definition')}" />
+        <property name="schemaFactory" ref="CoreSchemaFactory" />
     </bean>
 
     <bean class="io.cattle.platform.object.impl.DefaultObjectManager" >
         <property name="postInitHandlers" value="#{extensionManager.list('object.post.instantiation.handler')}" />
         <property name="lifeCycleHandlers" value="#{extensionManager.list('object.life.cycle.handler')}" />
         <property name="lockingConfiguration" ref="LockingJooqConfiguration" />
+        <property name="schemaFactory" ref="CoreSchemaFactory" />
     </bean>
 
-    <bean class="io.cattle.platform.object.postinit.SpecialFieldsPostInstantiationHandler" />
+    <bean class="io.cattle.platform.object.postinit.SpecialFieldsPostInstantiationHandler" >
+        <property name="schemaFactory" ref="CoreSchemaFactory" />
+    </bean>
     <bean class="io.cattle.platform.object.postinit.ObjectDefaultsPostInstantiationHandler" >
         <property name="defaultProviders">
             <list>
                 <bean class="io.cattle.platform.object.defaults.JsonDefaultsProvider" >
                     <property name="defaultPath" value="schema/defaults" />
                     <property name="defaultOverridePath" value="schema/defaults/overrides" />
+                    <property name="schemaFactory" ref="CoreSchemaFactory" />
                 </bean>
             </list>
         </property>

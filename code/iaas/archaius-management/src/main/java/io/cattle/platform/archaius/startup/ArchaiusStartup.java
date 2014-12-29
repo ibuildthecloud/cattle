@@ -51,7 +51,12 @@ public class ArchaiusStartup implements InitializationTask {
         baseConfig.addConfiguration(new MapConfiguration(getOverride()));
         baseConfig.addConfiguration(new MapConfiguration(GLOBAL_DEFAULT));
 
-        DynamicPropertyFactory.initWithConfigurationSource(baseConfig);
+        try {
+            DynamicPropertyFactory.initWithConfigurationSource(baseConfig);
+        } catch ( Throwable t ) {
+            t.printStackTrace();
+
+        }
     }
 
     protected Map<String,Object> getOverride() {

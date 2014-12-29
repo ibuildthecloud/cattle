@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.mina.util.ConcurrentHashSet;
@@ -68,8 +69,8 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
     private static final Logger log = LoggerFactory.getLogger(SshAgentConnectionFactory.class);
 
     private static final Pattern SSH_PATTERN = Pattern.compile("ssh://"
-                                            + "([^:]+)(:([^@]+))?@"
-                                            + "([^:]+)(:([0-9]+))?");
+            + "([^:]+)(:([^@]+))?@"
+            + "([^:]+)(:([0-9]+))?");
     private static final String PROTOCOL = "ssh://";
     private static final Map<String,String> URLS = new LinkedHashMap<String, String>();
     static {
@@ -237,22 +238,22 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
         ClientSession session = connect.getSession();
         boolean success = false;
         try {
-                if ( session == null ) {
-                    throw new IOException("Failed to create session to [" + opts + "]");
-                }
+            if ( session == null ) {
+                throw new IOException("Failed to create session to [" + opts + "]");
+            }
 
-                KeyPair kp = keyPairProvider.loadKey(KeyPairProvider.SSH_RSA);
-                session.authPublicKey(opts.getUsername(), kp);
-                if ( ! authSuccess(session) ) {
-                    session.authPassword(opts.getUsername(), opts.getPassword());
-                }
+            KeyPair kp = keyPairProvider.loadKey(KeyPairProvider.SSH_RSA);
+            session.authPublicKey(opts.getUsername(), kp);
+            if ( ! authSuccess(session) ) {
+                session.authPassword(opts.getUsername(), opts.getPassword());
+            }
 
-                if ( ! authSuccess(session) ) {
-                    throw new IOException("Failed to authenticate with [" + opts + "]");
-                }
+            if ( ! authSuccess(session) ) {
+                throw new IOException("Failed to authenticate with [" + opts + "]");
+            }
 
-                success = true;
-                return session;
+            success = true;
+            return session;
         } finally {
             if ( ! success && session != null ) {
                 session.close(true);
@@ -270,7 +271,6 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     protected synchronized SshClient getClient() {
         if ( client != null ) {
             return client;
@@ -401,6 +401,7 @@ public class SshAgentConnectionFactory implements AgentConnectionFactory {
     }
 
     @Inject
+    @Named("CoreExecutorService")
     public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }

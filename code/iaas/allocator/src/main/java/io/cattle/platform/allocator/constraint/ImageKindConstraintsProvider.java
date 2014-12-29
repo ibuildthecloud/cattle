@@ -14,6 +14,10 @@ public class ImageKindConstraintsProvider implements AllocationConstraintsProvid
     AllocatorDao allocatorDao;
     boolean exclusive = true;
 
+    public ImageKindConstraintsProvider(String kind) {
+        this.kind = kind;
+    }
+
     @Override
     public void appendConstraints(AllocationAttempt attempt, AllocationLog log, List<Constraint> constraints) {
         Long instanceId = attempt.getInstanceId();
@@ -45,7 +49,6 @@ public class ImageKindConstraintsProvider implements AllocationConstraintsProvid
         return kind;
     }
 
-    @Inject
     public void setKind(String kind) {
         this.kind = kind;
     }

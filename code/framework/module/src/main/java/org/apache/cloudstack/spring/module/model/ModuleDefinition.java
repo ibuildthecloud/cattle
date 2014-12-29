@@ -24,25 +24,29 @@ import java.util.List;
 import org.springframework.core.io.Resource;
 
 public interface ModuleDefinition {
-    
+
     ClassLoader getClassLoader();
-    
+
     String getName();
-    
+
     String getParentName();
-    
+
     List<Resource> getConfigLocations();
-    
+
     List<Resource> getContextLocations();
-    
+
     List<Resource> getInheritableContextLocations();
-    
+
     List<Resource> getOverrideContextLocations();
-    
+
+    List<Class<?>> getConfigClasses();
+
+    List<Class<?>> getInheritableConfigClasses();
+
     boolean isValid();
-    
+
     Collection<ModuleDefinition> getChildren();
-    
+
     void addChild(ModuleDefinition childDef);
-    
+
 }

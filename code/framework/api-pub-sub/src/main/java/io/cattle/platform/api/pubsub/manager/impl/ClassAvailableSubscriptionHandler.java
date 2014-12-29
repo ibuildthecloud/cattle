@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.apache.commons.lang3.reflect.ConstructorUtils;
 
@@ -30,6 +31,14 @@ public class ClassAvailableSubscriptionHandler implements SubscriptionHandler, P
     String testClass, className;
     int priority = Priority.SPECIFIC;
     List<ApiPubSubEventPostProcessor> eventProcessors;
+
+    public ClassAvailableSubscriptionHandler() {
+    }
+
+    public ClassAvailableSubscriptionHandler(String testClass, String className) {
+        this.testClass = testClass;
+        this.className = className;
+    }
 
     @Override
     public boolean subscribe(Collection<String> eventNames, ApiRequest apiRequest, boolean strip) throws IOException {
@@ -82,6 +91,7 @@ public class ClassAvailableSubscriptionHandler implements SubscriptionHandler, P
     }
 
     @Inject
+    @Named("CoreExecutorService")
     public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }
@@ -99,7 +109,6 @@ public class ClassAvailableSubscriptionHandler implements SubscriptionHandler, P
         return testClass;
     }
 
-    @Inject
     public void setTestClass(String testClass) {
         this.testClass = testClass;
     }
@@ -108,7 +117,6 @@ public class ClassAvailableSubscriptionHandler implements SubscriptionHandler, P
         return className;
     }
 
-    @Inject
     public void setClassName(String className) {
         this.className = className;
     }

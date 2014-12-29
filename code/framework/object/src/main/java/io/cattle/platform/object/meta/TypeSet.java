@@ -1,5 +1,6 @@
 package io.cattle.platform.object.meta;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -14,6 +15,10 @@ public class TypeSet {
 
     public void setTypeClasses(List<Class<?>> typeClasses) {
         this.typeClasses = typeClasses;
+    }
+
+    public void setTypeClasses(Class<?>... typeClasses) {
+        this.typeClasses = Arrays.asList(typeClasses);
     }
 
     public List<String> getTypeNames() {

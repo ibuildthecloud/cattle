@@ -28,7 +28,7 @@ import com.netflix.config.DynamicStringListProperty;
 
 public class ApiRequestFilter extends ModuleBasedFilter {
 
-    private static final String DEFAULT_MODULE = "api-server";
+    private static final String DEFAULT_MODULE = "system";
     private static final DynamicStringListProperty IGNORE = ArchaiusUtil.getList("api.ignore.paths");
 
     ApiRequestFilterDelegate delegate;
@@ -36,7 +36,7 @@ public class ApiRequestFilter extends ModuleBasedFilter {
 
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain) throws IOException,
-            ServletException {
+    ServletException {
         String path = ((HttpServletRequest)request).getServletPath();
 
         boolean ignore = false;
@@ -97,8 +97,8 @@ public class ApiRequestFilter extends ModuleBasedFilter {
             String key = String.format(
                     "api.%s.%s.%s",
                     success ? "success" : "failed",
-                    request.getType(),
-                    request.getMethod().toLowerCase());
+                            request.getType(),
+                            request.getMethod().toLowerCase());
 
             Timer timer = timers.get(key);
             if ( timer == null ) {
