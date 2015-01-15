@@ -275,7 +275,6 @@ def test_process_instance_auth(admin_client, client):
     })
 
     auth_check(client.schema, 'processInstance', 'r', {
-
     })
 
 

@@ -242,7 +242,6 @@ def test_docker_ports_from_container(client, admin_client,
                                      internal_test_client, docker_context):
     network = internal_test_client.create_network(isPublic=True)
     network = internal_test_client.wait_success(network)
-    client = admin_client
     uuid = TEST_IMAGE_UUID
     c = client.create_container(name='test',
                                 startOnCreate=False,

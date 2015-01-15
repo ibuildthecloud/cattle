@@ -136,7 +136,6 @@ def test_virtual_machine_no_ip(internal_test_client, sim_context):
     image_uuid = sim_context['imageUuid']
 
     network = internal_test_client.create_network()
-    client = internal_test_client
     subnet = internal_test_client.create_subnet(networkAddress='192.168.0.0',
                                                 isPublic=True,
                                                 cidrSize='16',
@@ -146,17 +145,17 @@ def test_virtual_machine_no_ip(internal_test_client, sim_context):
     subnet = internal_test_client.wait_success(subnet)
     assert subnet.state == 'active'
 
-    vm = client.create_virtual_machine(imageUuid=image_uuid,
-                                       subnetIds=[subnet.id])
+    vm = internal_test_client.create_virtual_machine(imageUuid=image_uuid,
+                                                     subnetIds=[subnet.id])
 
-    vm = client.wait_success(vm)
+    vm = internal_test_client.wait_success(vm)
 
     assert vm.state == 'running'
     assert vm.primaryIpAddress == '192.168.0.3'
 
-    vm = client.create_virtual_machine(imageUuid=image_uuid,
-                                       subnetIds=[subnet.id])
-    vm = client.wait_transitioning(vm)
+    vm = internal_test_client.create_virtual_machine(imageUuid=image_uuid,
+                                                     subnetIds=[subnet.id])
+    vm = internal_test_client.wait_transitioning(vm)
 
     assert vm.state == 'removed'
     assert vm.transitioning == 'error'

@@ -232,8 +232,7 @@ def test_host_vnet_association(internal_test_client, sim_context,
 
 
 def test_allocation_stay_associated_to_host(admin_client, sim_context):
-    c = admin_client.create_container(
-        imageUuid=sim_context['imageUuid'])
+    c = admin_client.create_container(imageUuid=sim_context['imageUuid'])
     c = admin_client.wait_success(c)
 
     assert c.state == 'running'
