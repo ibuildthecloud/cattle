@@ -84,8 +84,8 @@ def test_pagination_include(admin_client, sim_context):
         assert c.instanceHostMaps()[0].hostId == host.id
 
     collected = {}
-    r = admin_client.list_container(name=name,
-                                    include='instanceHostMaps', limit=2)
+    r = admin_client.list_container(name=name, include='instanceHostMaps',
+                                    limit=2)
     assert len(r) == 2
     for c in r:
         collected[c.id] = True
