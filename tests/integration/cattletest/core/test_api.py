@@ -60,24 +60,23 @@ def test_pagination(admin_client, sim_context):
     assert len(collected) == 4
 
 
-def test_pagination_include(internal_test_client, sim_context):
+def test_pagination_include(admin_client, sim_context):
     name = random_str()
     container_ids = []
     containers = []
     host = sim_context['host']
     for i in range(5):
-        c = internal_test_client.create_container(
-            imageUuid=sim_context['imageUuid'], name=name,
-            requestedHostId=host.id)
+        c = admin_client.create_container(imageUuid=sim_context['imageUuid'],
+                                          name=name, requestedHostId=host.id)
         containers.append(c)
         container_ids.append(c.id)
 
     for c in containers:
-        wait_success(internal_test_client, c)
+        wait_success(admin_client, c)
 
     assert len(containers[0].instanceHostMaps()) == 1
     assert host.id == containers[0].instanceHostMaps()[0].host().id
-    r = internal_test_client.list_container(name=name)
+    r = admin_client.list_container(name=name)
 
     assert len(r) == 5
     for c in r:
@@ -85,7 +84,7 @@ def test_pagination_include(internal_test_client, sim_context):
         assert c.instanceHostMaps()[0].hostId == host.id
 
     collected = {}
-    r = internal_test_client.list_container(name=name, include='instanceHostMaps',
+    r = admin_client.list_container(name=name, include='instanceHostMaps',
                                     limit=2)
     assert len(r) == 2
     for c in r:
@@ -113,13 +112,13 @@ def test_pagination_include(internal_test_client, sim_context):
 
     maps = []
     for id in container_ids:
-        maps.extend(internal_test_client.list_instanceHostMap(hostId=host.id,
+        maps.extend(admin_client.list_instanceHostMap(hostId=host.id,
                                                       instanceId=id))
 
     assert len(maps) == 5
 
     maps_from_include = []
-    r = internal_test_client.list_host(include='instanceHostMaps', limit=2)
+    r = admin_client.list_host(include='instanceHostMaps', limit=2)
 
     while True:
         for h in r:
@@ -152,12 +151,13 @@ def test_include_left_join(admin_client, sim_context):
 def test_include(internal_test_client, sim_context):
     image_uuid = sim_context['imageUuid']
     container = internal_test_client.create_container(imageUuid=image_uuid,
-                                              name='include_test')
+                                                      name='include_test')
     container = wait_success(internal_test_client, container)
     container = internal_test_client.reload(container)
     for link_name in ['instanceHostMaps', 'instancehostmaps']:
         found = False
-        for c in internal_test_client.list_container(name_like='include_test%'):
+        for c in internal_test_client.list_container(
+                name_like='include_test%'):
             if c.id == container.id:
                 found = True
                 assert len(c.instanceHostMaps()) == 1
@@ -166,8 +166,8 @@ def test_include(internal_test_client, sim_context):
         assert found
 
         found = False
-        for c in internal_test_client.list_container(include=link_name,
-                                             name_like='include_test%'):
+        for c in internal_test_client.list_container(
+                include=link_name, name_like='include_test%'):
             if c.id == container.id:
                 found = True
                 assert len(c.instanceHostMaps) == 1
@@ -177,7 +177,7 @@ def test_include(internal_test_client, sim_context):
         c = internal_test_client.by_id('container', container.id)
         assert callable(c.instanceHostMaps)
         c = internal_test_client.by_id('container', container.id,
-                               include=link_name)
+                                       include=link_name)
         assert len(c.instanceHostMaps) == 1
 
 
@@ -237,14 +237,12 @@ def test_child_map(admin_client, sim_context):
 
 
 def test_fields_on_include(admin_client, sim_context):
-    c = admin_client.create_container(
-        imageUuid=sim_context['imageUuid'],
-        requestedHostId=sim_context['host'].id)
+    c = admin_client.create_container(imageUuid=sim_context['imageUuid'],
+                                      requestedHostId=sim_context['host'].id)
     c = admin_client.wait_success(c)
     assert c.state == 'running'
 
-    host = admin_client.by_id_host(sim_context['host'].id,
-                                           include='instances')
+    host = admin_client.by_id_host(sim_context['host'].id, include='instances')
 
     assert host is not None
 
