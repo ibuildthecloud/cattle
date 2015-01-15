@@ -108,20 +108,19 @@ def test_container_port_start(client, sim_context, network):
     assert count == 3
 
 
-def test_container_port_stop(internal_test_client, sim_context, network):
+def test_container_port_stop(admin_client, sim_context, network):
     host = sim_context['host']
     image_uuid = sim_context['imageUuid']
-    c = internal_test_client.create_container(imageUuid=image_uuid,
-                                              requestedHostId=host.id,
-                                              networkIds=[network.id],
-                                              ports=[80, '8081:81',
-                                                     '8082:82/udp'])
+    c = admin_client.create_container(imageUuid=image_uuid,
+                                      requestedHostId=host.id,
+                                      networkIds=[network.id],
+                                      ports=[80, '8081:81', '8082:82/udp'])
 
     assert c.state == 'creating'
-    c = internal_test_client.wait_success(c)
+    c = admin_client.wait_success(c)
     assert c.state == 'running'
 
-    c = internal_test_client.wait_success(c.stop())
+    c = admin_client.wait_success(c.stop())
     assert c.state == 'stopped'
 
     ports = c.ports()
@@ -144,23 +143,22 @@ def test_container_port_stop(internal_test_client, sim_context, network):
     assert count == 3
 
 
-def test_container_port_purge(internal_test_client, sim_context, network):
+def test_container_port_purge(admin_client, sim_context, network):
     image_uuid = sim_context['imageUuid']
-    c = internal_test_client.create_container(imageUuid=image_uuid,
-                                              networkIds=[network.id],
-                                              ports=[80, '8081:81',
-                                                     '8082:82/udp'])
+    c = admin_client.create_container(imageUuid=image_uuid,
+                                      networkIds=[network.id],
+                                      ports=[80, '8081:81', '8082:82/udp'])
 
     assert c.state == 'creating'
-    c = internal_test_client.wait_success(c)
+    c = admin_client.wait_success(c)
     assert c.state == 'running'
 
-    c = internal_test_client.wait_success(c.stop(remove=True))
+    c = admin_client.wait_success(c.stop(remove=True))
     assert c.state == 'removed'
 
     assert len(c.ports()) == 3
 
-    c = internal_test_client.wait_success(c.purge())
+    c = admin_client.wait_success(c.purge())
     assert c.state == 'purged'
 
     count = 0
@@ -190,8 +188,8 @@ def test_port_validation(client, sim_context, network):
         assert e.error.code == 'PortWrongFormat'
 
 
-def test_ports_service(internal_test_client, sim_context, test_network):
-    c = create_sim_container(internal_test_client, sim_context,
+def test_ports_service(admin_client, sim_context, test_network):
+    c = create_sim_container(admin_client, sim_context,
                              ports=['80'],
                              networkIds=[test_network.id])
 
@@ -215,12 +213,12 @@ def test_ports_service(internal_test_client, sim_context, test_network):
 
     assert port.publicPort is None
 
-    port = internal_test_client.update(port, publicPort=12345)
+    port = admin_client.update(port, publicPort=12345)
     assert port.state == 'updating-active'
     assert port.publicPort == 12345
 
-    port = internal_test_client.wait_success(port)
+    port = admin_client.wait_success(port)
     assert port.state == 'active'
 
-    new_item = internal_test_client.reload(item)
+    new_item = admin_client.reload(item)
     assert new_item.requestedVersion > item.requestedVersion

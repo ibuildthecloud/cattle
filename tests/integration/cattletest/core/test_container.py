@@ -185,11 +185,12 @@ def test_container_restart(admin_client, internal_test_client, sim_context):
     container = internal_test_client.reload(container)
     container = wait_success(internal_test_client, container)
     _assert_running(container, sim_context)
-
+    container = admin_client.reload(container)
     container = container.restart()
 
     assert container.state == 'restarting'
-    container = wait_success(internal_test_client, container)
+    container = wait_success(admin_client, container)
+    container = internal_test_client.reload(container)
     _assert_running(container, sim_context)
 
 
@@ -366,6 +367,7 @@ def test_container_purge(admin_client, internal_test_client, sim_context):
     container = wait_success(admin_client, container)
     assert container.state == "purged"
 
+    container = internal_test_client.reload(container)
     instance_host_mappings = container.instanceHostMaps()
     assert len(instance_host_mappings) == 1
     assert instance_host_mappings[0].state == "removed"

@@ -2,7 +2,7 @@
     "authorize" : {
     	".*" : "",
     	
-    	".*\\..*Id" : "r",
+    	".*\\..*accountId" : "r",
         ".*\\.id" : "r",
         ".*\\.data" : "r",
         ".*\\.description" : "cru",
@@ -31,7 +31,6 @@
         "activeSetting.value" : "ru",
 
         "agent" : "r",
-        "agent.accountId" : "r",
         "agent.managedConfig" : "r",
         "agent.uri" : "r",
         "agent.agentGroupId": "",
@@ -269,6 +268,7 @@
         "statsAccess.url" : "r",
            
         "subscribe" : "cr",
+        "subscribe.agentId" : "r",
 
         "setting" : "crud",
         "setting.name" : "cr",
@@ -311,7 +311,6 @@
         "vnet.uri" : "cr",
 
         "volume" : "rd",
-        "volume.accountId" : "r",
         "volume.allocationState" : "r",
         "volume.attachedState" : "r",
         "volume.deviceNumber" : "r",
@@ -320,6 +319,8 @@
         "volume.uri" : "r",
         "volume.isHostPath" : "r",
         "volume.instanceId" : "r",
+        "volume.zoneId" : "r",
+        "volume.imageId" : "r",
         
         "zone" : "crud",
 		
