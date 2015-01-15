@@ -114,7 +114,9 @@ def test_container_port_stop(admin_client, sim_context, network):
     c = admin_client.create_container(imageUuid=image_uuid,
                                       requestedHostId=host.id,
                                       networkIds=[network.id],
-                                      ports=[80, '8081:81', '8082:82/udp'])
+                                      ports=[80,
+                                             '8081:81',
+                                             '8082:82/udp'])
 
     assert c.state == 'creating'
     c = admin_client.wait_success(c)
@@ -147,7 +149,9 @@ def test_container_port_purge(admin_client, sim_context, network):
     image_uuid = sim_context['imageUuid']
     c = admin_client.create_container(imageUuid=image_uuid,
                                       networkIds=[network.id],
-                                      ports=[80, '8081:81', '8082:82/udp'])
+                                      ports=[80,
+                                             '8081:81',
+                                             '8082:82/udp'])
 
     assert c.state == 'creating'
     c = admin_client.wait_success(c)

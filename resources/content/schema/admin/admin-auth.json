@@ -1,8 +1,8 @@
 {
     "authorize" : {
-    	".*" : "",
+        ".*" : "",
     	
-    	".*\\..*accountId" : "r",
+    	".*\\.accountId" : "r",
         ".*\\.id" : "r",
         ".*\\.data" : "r",
         ".*\\.description" : "cru",

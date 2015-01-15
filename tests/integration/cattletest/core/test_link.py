@@ -11,8 +11,7 @@ def link_network(internal_test_client, sim_context):
     return internal_test_client.by_id_network(nsp.networkId)
 
 
-def test_link_instance_stop_start(admin_client, sim_context,
-                                  link_network):
+def test_link_instance_stop_start(admin_client, sim_context, link_network):
     target1 = create_sim_container(admin_client, sim_context,
                                    ports=['180', '122/udp'],
                                    networkIds=[link_network.id])
@@ -160,9 +159,10 @@ def test_link_update(admin_client, sim_context):
 def test_link_remove_restore(admin_client, sim_context):
     target1 = create_sim_container(admin_client, sim_context)
 
-    c = admin_client.create_container(
-        imageUuid=sim_context['imageUuid'], startOnCreate=False,
-        instanceLinks={'target1_link': target1.id})
+    c = admin_client.create_container(imageUuid=sim_context['imageUuid'],
+                                      startOnCreate=False,
+                                      instanceLinks={
+                                          'target1_link': target1.id})
     c = admin_client.wait_success(c)
 
     links = c.instanceLinks()
@@ -216,12 +216,13 @@ def test_null_links(admin_client, sim_context):
 
 
 def test_link_timeout(admin_client, sim_context, link_network):
-    t = admin_client.create_container(
-        imageUuid=sim_context['imageUuid'], startOnCreate=False)
+    t = admin_client.create_container(imageUuid=sim_context['imageUuid'],
+                                      startOnCreate=False)
 
-    c = admin_client.create_container(
-        imageUuid=sim_context['imageUuid'], networkIds=[link_network.id],
-        instanceLinks={'t': t.id}, data={'linkWaitTime': 100})
+    c = admin_client.create_container(imageUuid=sim_context['imageUuid'],
+                                      networkIds=[link_network.id],
+                                      instanceLinks={'t': t.id},
+                                      data={'linkWaitTime': 100})
 
     c = admin_client.wait_transitioning(c)
 
