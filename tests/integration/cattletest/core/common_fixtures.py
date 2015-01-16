@@ -458,7 +458,8 @@ def auth_check(schema, id, access, props=None):
             props[i] = ''.join(acl)
 
     for i in ['created', 'removed', 'transitioning', 'transitioningProgress',
-              'transitioningMessage', 'id', 'uuid', 'kind', 'state']:
+              'removeTime', 'transitioningMessage', 'id', 'uuid', 'kind',
+              'state']:
         if i not in props and i in type.resourceFields:
             props[i] = 'r'
 

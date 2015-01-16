@@ -55,7 +55,7 @@ def test_docker_create_only(admin_client, internal_test_client,
     container = internal_test_client.reload(container)
     assert container.image().instanceKind == 'container'
 
-    image = admin_client.list_image(uuid=uuid)[0]
+    image = internal_test_client.list_image(uuid=uuid)[0]
     assert image.isPublic
     assert image.name == '{}'.format(image.data.dockerImage.fullName,
                                      image.data.dockerImage.id)

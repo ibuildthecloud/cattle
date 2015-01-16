@@ -28,7 +28,6 @@ def test_container_create_only(admin_client, internal_test_client,
 
     assert_fields(container, {
         "type": "container",
-        "instanceTriggeredStop": "stop",
         "allocationState": "inactive",
         "state": "creating",
         "imageUuid": uuid,
@@ -47,6 +46,7 @@ def test_container_create_only(admin_client, internal_test_client,
     container = internal_test_client.reload(container)
 
     assert container.imageId is not None
+    assert container.instanceTriggeredStop == 'stop'
 
     image = container.image()
     image = wait_success(internal_test_client, image)
@@ -347,7 +347,7 @@ def test_container_purge(admin_client, internal_test_client, sim_context):
     # things too
 
     remove_time = now() - timedelta(hours=1)
-    admin_client.update(container, {
+    internal_test_client.update(container, {
         'removeTime': format_time(remove_time)
     })
 

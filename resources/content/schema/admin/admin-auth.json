@@ -2,14 +2,13 @@
     "authorize" : {
         ".*" : "",
     	
-    	  ".*\\.accountId" : "r",
+    	".*\\.accountId" : "r",
         ".*\\.id" : "r",
         ".*\\.data" : "r",
         ".*\\.description" : "cru",
-        ".*\\.isPublic" : "cru",
         ".*\\.kind" : "r",
         ".*\\.name" : "cru",
-        ".*\\.removeTime" : "ru",
+        ".*\\.removeTime" : "r",
         ".*\\.uuid" : "r",
         ".*\\.accountId" : "r",
         ".*\\.created" : "r",
@@ -122,7 +121,7 @@
         "externalHandler.timeoutMillis" : "cru",
         "externalHandler.processNames" : "cr",
 
-        "githubconfig": "cr",
+        "githubconfig": "cru",
         "githubconfig.enabled": "cr",
         "githubconfig.clientId": "cr",
         "githubconfig.allowedUsers": "cr",
@@ -137,6 +136,8 @@
         "databasechangeloglock" : "rd",
         "databasechangelog" : "rd",
 
+        "image" : "r",
+        
         "instanceHostMap" : "r",
 
         "instance" : "r",

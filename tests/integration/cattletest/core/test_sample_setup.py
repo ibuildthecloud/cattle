@@ -1,9 +1,8 @@
 from common_fixtures import *  # NOQA
 
 
-def test_sample_data(admin_client, internal_test_client, system_account):
-
-    network = find_one(admin_client.list_network, uuid='unmanaged')
+def test_sample_data(internal_test_client, system_account):
+    network = find_one(internal_test_client.list_network, uuid='unmanaged')
     assert network.accountId == system_account.id
     assert network.isPublic
     assert network.kind == 'network'
@@ -28,7 +27,7 @@ def test_sample_data(admin_client, internal_test_client, system_account):
 
     assert network_service_kinds == set(['metadataService'])
 
-    network = find_one(admin_client.list_network,
+    network = find_one(internal_test_client.list_network,
                        uuid='managed-docker0')
     assert network.accountId == system_account.id
     assert network.isPublic

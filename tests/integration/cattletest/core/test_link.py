@@ -103,7 +103,8 @@ def test_link_create(admin_client, internal_test_client, sim_context,
         assert link.state == 'active'
         assert len(resource_pool_items(internal_test_client, link)) == 2
         assert link.instanceId == c.id
-        ip_address = _find_agent_instance_ip(nsp, c)
+        ip_address = _find_agent_instance_ip(nsp,
+                                             internal_test_client.reload(c))
 
         if link.linkName == 'target1_link':
             assert link.targetInstanceId == target1.id
