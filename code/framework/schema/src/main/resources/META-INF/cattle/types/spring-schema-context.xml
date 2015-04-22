@@ -29,5 +29,7 @@
         <property name="suffix" value="Record" />
     </bean>
 
+    <bean class="io.cattle.platform.schema.processor.StandardFieldsPostProcessor" />
+
     <extension:discover class="io.github.ibuildthecloud.gdapi.factory.impl.SchemaPostProcessor" />
 </beans>
