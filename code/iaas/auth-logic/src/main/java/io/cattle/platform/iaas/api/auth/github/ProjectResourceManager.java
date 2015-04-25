@@ -27,12 +27,7 @@ import io.github.ibuildthecloud.gdapi.model.ListOptions;
 import io.github.ibuildthecloud.gdapi.request.ApiRequest;
 import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.inject.Inject;
 
@@ -142,16 +137,16 @@ public class ProjectResourceManager extends AbstractObjectResourceManager {
         return newProject;
     }
 
-    public Account createDefaultProject(Account account) {
+    public Account createDefaultProject(Account account, Set<ExternalId> externalIds) {
         if (account.getProjectId() != null){
             Account defaultProject = authDao.getAccountById(account.getProjectId());
-            if (defaultProject != null){
-                return defaultProject;
+            if (defaultProject == null || !defaultProject.getState().equalsIgnoreCase(CommonStatesConstants.ACTIVE)){
+                throw new ClientVisibleException(ResponseCodes.FORBIDDEN);
             }
+            return defaultProject;
         }
-
         Account defaultProject = authDao.createDefaultProject(account);
-        ExternalId externalId = new ExternalId(String.valueOf(account.getId()), ProjectConstants.RANCHER_ID);
+        ExternalId externalId = new ExternalId(account.getExternalId(), account.getExternalIdType(), account.getName());
         authDao.createProjectMember(defaultProject, new Member(externalId, ProjectConstants.OWNER));
 
         return defaultProject;
@@ -159,12 +154,15 @@ public class ProjectResourceManager extends AbstractObjectResourceManager {
 
     @Override
     protected Object deleteInternal(String type, String id, final Object obj, ApiRequest apiRequest) {
-        if (!(obj instanceof Account)) {
+        if (!(obj instanceof Account) || !(((Account) obj).getKind().equalsIgnoreCase(ProjectConstants.TYPE))) {
             return super.deleteInternal(type, id, obj, apiRequest);
         }
         Policy policy = (Policy) ApiContext.getContext().getPolicy();
         if (authDao.getAccountById(Long.valueOf(id)) == null){
             throw new ClientVisibleException(ResponseCodes.NOT_FOUND);
+        }
+        if (authDao.getAccountById(policy.getAccountId()).getProjectId().equals(Long.valueOf(id))){
+            throw new ClientVisibleException(ResponseCodes.NOT_ACCEPTABLE);
         }
         if (!authDao.isProjectOwner(Long.valueOf(id), policy.getAccountId(),
                 policy.isOption(Policy.AUTHORIZED_FOR_ALL_ACCOUNTS), policy.getExternalIds())) {

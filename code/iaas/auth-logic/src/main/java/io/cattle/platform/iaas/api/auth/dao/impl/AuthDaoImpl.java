@@ -21,6 +21,7 @@ import io.cattle.platform.lock.LockManager;
 import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.process.StandardProcess;
+import io.github.ibuildthecloud.gdapi.annotation.Field;
 import io.github.ibuildthecloud.gdapi.exception.ClientVisibleException;
 import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
 
@@ -184,7 +185,7 @@ public class AuthDaoImpl extends AbstractJooqDao implements AuthDao {
             projects.addAll(create()
                     .selectFrom(ACCOUNT)
                     .where(ACCOUNT.KIND.eq(ProjectConstants.TYPE)
-                            .and(ACCOUNT.STATE.eq(CommonStatesConstants.ACTIVE)))
+                            .and(ACCOUNT.STATE.ne(CommonStatesConstants.PURGED)))
                     .orderBy(ACCOUNT.ID.asc())
                     .fetch());
             return projects;

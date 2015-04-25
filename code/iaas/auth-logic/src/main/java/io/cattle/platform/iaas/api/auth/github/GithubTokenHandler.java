@@ -117,12 +117,13 @@ public class GithubTokenHandler implements TokenHandler {
             if (null == account) {
                 account = authDao.createAccount(userAccountInfo.getAccountName(), GITHUB_USER_ACCOUNT_KIND, userAccountInfo.getAccountId(),
                         GITHUB_EXTERNAL_TYPE);
-                projectResourceManager.createDefaultProject(account);
+                projectResourceManager.createDefaultProject(account, externalIds);
             }
             if (whiteListed && !hasAccessToAProject) {
-                    projectResourceManager.createDefaultProject(account);
+                    projectResourceManager.createDefaultProject(account, externalIds);
             }
         } else {
+
             account = authDao.getAdminAccount();
             authDao.updateAccount(account, null, GITHUB_ADMIN_ACCOUNT_KIND, userAccountInfo.getAccountId(), GITHUB_EXTERNAL_TYPE);
         }

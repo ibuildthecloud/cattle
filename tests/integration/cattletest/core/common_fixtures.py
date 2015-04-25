@@ -21,7 +21,7 @@ ADMIN_HEADERS['X-API-Project-Id'] = 'USER'
 
 @pytest.fixture(scope='session')
 def cattle_url():
-    default_url = 'http://localhost:8080/v1/schemas'
+    default_url = 'http://latest.rancher.io:8080/v1/schemas'
     return os.environ.get('CATTLE_URL', default_url)
 
 
@@ -522,6 +522,11 @@ def create_and_activate(client, type, **kw):
 
     assert obj.state == 'active'
     return obj
+
+
+def acc_id(client):
+    obj = client.list_api_key()[0]
+    return obj.account().id
 
 
 def delete_sim_instances(admin_client):

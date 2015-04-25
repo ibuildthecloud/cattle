@@ -154,11 +154,6 @@ def project_clients(admin_client):
     return clients
 
 
-def acc_id(client):
-    obj = client.list_api_key()[0]
-    return obj.account().id
-
-
 @pytest.fixture()
 def members(project_clients):
     members = ['Owner', 'Member']
@@ -462,3 +457,49 @@ def test_set_default_project(project_clients, admin_client, project):
     project.setasdefault()
     assert admin_client.by_id('account', acc_id(project_clients['Owner']))\
         .projectId == project.id
+
+
+def test_project_deactivate(admin_client, project_clients, project, members):
+    project.setmembers(members=members)
+    diff_members(members, get_plain_members(project.projectMembers()))
+    project = project_clients['Member'].reload(project)
+    with pytest.raises(ApiError) as e:
+        project.deactivate()
+    assert e.value.error.status == 403
+    project = project_clients['Owner'].reload(project)
+    project.deactivate()
+    project = project_clients['Owner'].wait_success(project)
+    assert project.state == 'inactive'
+    project.activate()
+    project = admin_client.wait_success(project)
+    project.deactivate()
+    project = project_clients['Owner'].wait_success(project)
+    assert project.state == 'inactive'
+
+
+def test_cant_delete_default_project(admin_client, project_clients, project):
+    project.setasdefault()
+    with pytest.raises(ApiError) as e:
+        project.deactivate()
+    assert e.value.error.status == 406
+    project = admin_client.reload(project)
+    project = project_clients['Owner'].wait_success(project)
+    with pytest.raises(ApiError) as e:
+        project_clients['Owner'].delete(project)
+    assert e.value.error.status == 406
+
+
+def test_set_default_admin(admin_client, project):
+    prevDefault = admin_client.by_id('account', acc_id(admin_client)).projectId
+    project = admin_client.reload(project)
+    project.setasdefault()
+    account = admin_client.by_id('project', acc_id(admin_client))
+    assert account.projectId == project.id
+    try:
+        admin_client.by_id('project', prevDefault).setasdefault()
+    except ApiError as e:
+        assert e.error.status == 404
+        project = admin_client.list_project(uuid='adminProject')[0]\
+            .setasdefault()
+        account = admin_client.by_id('project', acc_id(admin_client))
+        assert account.projectId == project.id
