@@ -486,9 +486,14 @@ public class ServiceDiscoveryServiceImpl implements ServiceDiscoveryService {
             properties.put(InstanceConstants.FIELD_NETWORK_IDS, networkIds);
             properties.put(INSTANCE.IMAGE_ID, imageId);
             properties.put(ServiceDiscoveryConstants.FIELD_SERVICE_ID, service.getId());
-            Map<String, Object> props = objectManager.convertToPropertiesFor(Instance.class,
+            final Map<String, Object> props = objectManager.convertToPropertiesFor(Instance.class,
                     properties);
-            instance = resourceDao.createAndSchedule(Instance.class, props);
+            instance = DeferredUtils.nest(new Callable<Instance>() {
+                @Override
+                public Instance call() throws Exception {
+                    return resourceDao.createAndSchedule(Instance.class, props);
+                }
+            });
         }
 
         return instance;

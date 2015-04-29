@@ -39,6 +39,7 @@ public class DockerTransformerImpl implements DockerTransformer {
     @Inject
     JsonMapper jsonMapper;
 
+    @Override
     public List<DockerInspectTransformVolume> transformVolumes(Map<String, Object> fromInspect) {
         InspectContainerResponse inspect = transformInspect(fromInspect);
         HostConfig hostConfig = inspect.getHostConfig();
@@ -132,6 +133,10 @@ public class DockerTransformerImpl implements DockerTransformer {
 
     void setName(Instance instance, InspectContainerResponse inspect) {
         String name = inspect.getName();
+        if (name == null) {
+            return;
+        }
+
         name = name.replaceFirst("/", "");
         instance.setName(name);
     }

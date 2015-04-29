@@ -132,7 +132,7 @@ public class DockerPostInstanceHostMapActivate extends AbstractObjectProcessLogi
         }
         Map<String, String> volumes = (Map<String, String>) inspect.get("Volumes");
         Map<String, Boolean> volumesRW = (Map<String, Boolean>) inspect.get("VolumesRW");
-        Map<String, String> hostBindMounts = extractHostBindMounts((List<String>) ((Map) inspect.get("HostConfig")).get("Binds"));
+        //Map<String, String> hostBindMounts = extractHostBindMounts((List<String>) ((Map) inspect.get("HostConfig")).get("Binds"));
 
         if (volumes.size() == 0) {
             /* If there are no volumes avoid looking for a pool because one may not exists
@@ -154,7 +154,7 @@ public class DockerPostInstanceHostMapActivate extends AbstractObjectProcessLogi
             return;
         }
 
-        Map<String, Object> inspect = (Map<String, Object>)instance.getData().get(FIELD_DOCKER_INSPECT);
+        //Map<String, Object> inspect = (Map<String, Object>)instance.getData().get(FIELD_DOCKER_INSPECT);
         if (inspect == null) {
             return;
         }
