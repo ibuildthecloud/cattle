@@ -3,6 +3,7 @@ package io.cattle.platform.iaas.api.auth.github;
 import io.cattle.platform.api.auth.ExternalId;
 import io.cattle.platform.api.auth.Policy;
 import io.cattle.platform.api.resource.AbstractObjectResourceManager;
+import io.cattle.platform.core.constants.ProjectConstants;
 import io.cattle.platform.core.dao.GenericResourceDao;
 import io.cattle.platform.core.model.Account;
 import io.cattle.platform.core.model.ProjectMember;
@@ -117,7 +118,7 @@ public class ProjectMemberResourceManager extends AbstractObjectResourceManager 
             membersCreated.addAll(authDao.setProjectMembers(project, membersTransformed));
         }
         for (ProjectMember member: membersCreated) {
-            member = untransform(member);
+            untransform(member);
         }
         return membersCreated;
     }

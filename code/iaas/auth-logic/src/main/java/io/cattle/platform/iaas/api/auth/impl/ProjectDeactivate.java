@@ -2,7 +2,6 @@ package io.cattle.platform.iaas.api.auth.impl;
 
 import io.cattle.platform.api.action.ActionHandler;
 import io.cattle.platform.api.auth.Policy;
-import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.constants.ProjectConstants;
 import io.cattle.platform.core.model.Account;
 import io.cattle.platform.iaas.api.auth.dao.AuthDao;
@@ -32,9 +31,6 @@ public class ProjectDeactivate implements ActionHandler{
         project = authDao.getAccountById(project.getId());
         if (project == null) {
             throw new ClientVisibleException(ResponseCodes.NOT_FOUND);
-        }
-        if (authDao.getAccountById(policy.getAccountId()).getProjectId().equals(Long.valueOf(project.getId()))){
-            throw new ClientVisibleException(ResponseCodes.NOT_ACCEPTABLE);
         }
         if (!authDao.isProjectOwner(project.getId(), policy.getAccountId(),
                 policy.isOption(Policy.AUTHORIZED_FOR_ALL_ACCOUNTS), policy.getExternalIds())){

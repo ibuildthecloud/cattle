@@ -95,20 +95,17 @@ public class GithubTokenHandler implements TokenHandler {
             externalIds.add(new ExternalId(info.getId(), GithubUtils.ORG_SCOPE, info.getOrg() + ":" + info.getName()));
         }
 
-        Account account = null;
+        Account account;
         boolean whiteListed = getWhitelistedUser(idList) != null;
         boolean hasAccessToAProject = authDao.hasAccessToAnyProject(externalIds, false, null);
         if (SECURITY.get()) {
             switch (ACCESS_MODE.get()) {
                 case "restricted":
-                    if (whiteListed) {
+                    if (whiteListed || hasAccessToAProject) {
                         break;
-                    } else if (!whiteListed && !hasAccessToAProject) {
-                        throw new ClientVisibleException(ResponseCodes.UNAUTHORIZED);
                     }
-                    break;
+                    throw new ClientVisibleException(ResponseCodes.UNAUTHORIZED);
                 case "unrestricted":
-                whiteListed = true;
                     break;
                 default:
                     throw new ClientVisibleException(ResponseCodes.UNAUTHORIZED);
@@ -117,15 +114,14 @@ public class GithubTokenHandler implements TokenHandler {
             if (null == account) {
                 account = authDao.createAccount(userAccountInfo.getAccountName(), GITHUB_USER_ACCOUNT_KIND, userAccountInfo.getAccountId(),
                         GITHUB_EXTERNAL_TYPE);
-                projectResourceManager.createDefaultProject(account, externalIds);
-            }
-            if (whiteListed && !hasAccessToAProject) {
-                    projectResourceManager.createDefaultProject(account, externalIds);
+                if (!hasAccessToAProject) {
+                    projectResourceManager.createProjectForUser(account);
+                }
             }
         } else {
-
             account = authDao.getAdminAccount();
             authDao.updateAccount(account, null, GITHUB_ADMIN_ACCOUNT_KIND, userAccountInfo.getAccountId(), GITHUB_EXTERNAL_TYPE);
+            authDao.allProjectsHaveNonRancherIdMember(new ExternalId(userAccountInfo.getAccountId(), GithubUtils.USER_SCOPE));
         }
         account = objectManager.reload(account);
         jsonData.put("account_id", userAccountInfo.getAccountId());
@@ -134,11 +130,10 @@ public class GithubTokenHandler implements TokenHandler {
         jsonData.put("username", userAccountInfo.getAccountName());
         jsonData.put("team_ids", teamIds);
         jsonData.put("org_ids", orgIds);
-        String defaultProjectId = (String) ApiContext.getContext().getIdFormatter().formatId(objectManager.getType(Account.class), account.getProjectId());
         String accountId = (String) ApiContext.getContext().getIdFormatter().formatId(objectManager.getType(Account.class), account.getId());
         Date expiry = new Date(System.currentTimeMillis() + TOKEN_EXPIRY_MILLIS.get());
         return new Token(tokenService.generateEncryptedToken(jsonData, expiry), userAccountInfo.getAccountName(), orgNames, teamsAccountInfo, null, null,
-                account.getKind(), defaultProjectId, accountId);
+                account.getKind(), accountId);
     }
 
     protected String getWhitelistedUser(List<String> idList) {
@@ -171,8 +166,8 @@ public class GithubTokenHandler implements TokenHandler {
         }
         List<String> strings = new ArrayList<String>();
         String[] splitted = string.split(",");
-        for (int i = 0; i < splitted.length; i++) {
-            String element = splitted[i].trim();
+        for (String aSplitted : splitted) {
+            String element = aSplitted.trim();
             strings.add(element);
         }
         return strings;

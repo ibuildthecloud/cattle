@@ -3,6 +3,7 @@ package io.cattle.platform.iaas.api.auth.dao.impl;
 import static io.cattle.platform.core.model.tables.AccountTable.*;
 import static io.cattle.platform.core.model.tables.CredentialTable.*;
 import static io.cattle.platform.core.model.tables.ProjectMemberTable.*;
+
 import io.cattle.platform.api.auth.ExternalId;
 import io.cattle.platform.archaius.util.ArchaiusUtil;
 import io.cattle.platform.core.constants.CommonStatesConstants;
@@ -21,9 +22,6 @@ import io.cattle.platform.lock.LockManager;
 import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.process.StandardProcess;
-import io.github.ibuildthecloud.gdapi.annotation.Field;
-import io.github.ibuildthecloud.gdapi.exception.ClientVisibleException;
-import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,7 +68,7 @@ public class AuthDaoImpl extends AbstractJooqDao implements AuthDao {
                 .selectFrom(ACCOUNT)
                 .where(
                         ACCOUNT.ID.eq(id)
-.and(ACCOUNT.STATE.ne(CommonStatesConstants.PURGED))
+                                .and(ACCOUNT.STATE.ne(CommonStatesConstants.PURGED))
                                 .and(ACCOUNT.REMOVED.isNull())
                 ).fetchOne();
     }
@@ -329,7 +327,7 @@ public class AuthDaoImpl extends AbstractJooqDao implements AuthDao {
                 HashSet<Member> create = (HashSet<Member>) ((HashSet<Member>) members).clone();
                 HashSet<Member> delete = (HashSet<Member>) ((HashSet<Member>) otherPreviosMembers).clone();
                 for (Member member : members) {
-                    if (delete.remove(member)){
+                    if (delete.remove(member)) {
                         create.remove(member);
                     }
                 }
@@ -366,37 +364,26 @@ public class AuthDaoImpl extends AbstractJooqDao implements AuthDao {
     }
 
     @Override
-    public Account setDefaultProject(Account project, long accountId) {
-        if (project == null) {
-            throw new ClientVisibleException(ResponseCodes.BAD_REQUEST, "Failed", "No project specified.", null);
-        }
-        Account account = getAccountById(accountId);
-        if (accountId != project.getId() && project.getKind().equalsIgnoreCase(ProjectConstants.TYPE)
-                && !account.getKind().equalsIgnoreCase(ProjectConstants.TYPE)) {
-            int updateCount = create()
-                    .update(ACCOUNT)
-                    .set(ACCOUNT.PROJECT_ID, project.getId())
-                    .where(ACCOUNT.ID
-                            .eq(accountId))
-                    .execute();
-
-            if (1 != updateCount) {
-                throw new ClientVisibleException(ResponseCodes.NOT_MODIFIED, "Failed", "Failed to update account default project.", null);
+    public void allProjectsHaveNonRancherIdMember(ExternalId externalId) {
+        //This operation is expensive if there are alot of projects and members however this is
+        //only called when auth is being turned on. In most cases this will only be called once.
+        Member newMember = new Member(externalId, "owner");
+        List<Account> allProjects = getAccessibleProjects(null, true, null);
+        for(Account project: allProjects){
+            List<? extends ProjectMember> members = getActiveProjectMembers(project.getId());
+            boolean hasNonRancherMember = false;
+            for (ProjectMember member: members){
+                if (!member.getExternalIdType().equalsIgnoreCase(ProjectConstants.RANCHER_ID)){
+                    hasNonRancherMember = true;
+                    objectProcessManager.executeStandardProcess(StandardProcess.DEACTIVATE, member, null);
+                    objectProcessManager.executeStandardProcess(StandardProcess.REMOVE, member, null);
+                }
+                if (hasNonRancherMember) break;
             }
-            return project;
-        } else {
-            throw new ClientVisibleException(ResponseCodes.BAD_REQUEST, "Failed", "Cannot Use your account as a default project", null);
-
+            if (!hasNonRancherMember) {
+                createProjectMember(project, newMember);
+            }
         }
-    }
-
-    @Override
-    public Account getDefaultProject(Account account) {
-        Account project = getAccountById(account.getProjectId());
-        if (project == null){
-            throw new ClientVisibleException(ResponseCodes.FORBIDDEN, "DefaultProjectNotFound", "Current Default Project Not Found. Please Select Another.", null);
-        }
-        return project;
     }
 
     @Override

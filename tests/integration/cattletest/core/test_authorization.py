@@ -46,8 +46,7 @@ def test_token_auth(token_client):
         'security': 'r',
         'teams': 'r',
         'userType': 'r',
-        'accountId': 'r',
-        'defaultProject': 'r'
+        'accountId': 'r'
     })
 
 

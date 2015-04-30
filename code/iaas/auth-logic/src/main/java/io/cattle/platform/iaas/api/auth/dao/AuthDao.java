@@ -48,7 +48,5 @@ public interface AuthDao {
 
     ProjectMember createProjectMember(Account project, Member member);
 
-    Account setDefaultProject(Account project, long accountId);
-
-    Account getDefaultProject(Account account);
+    void allProjectsHaveNonRancherIdMember(ExternalId externalId);
 }

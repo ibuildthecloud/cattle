@@ -1,4 +1,3 @@
-import gdapi
 import cattle
 import os
 import pytest
@@ -15,19 +14,15 @@ SLEEP_DELAY = 0.5
 ACCOUNT_LIST = ['admin', 'agent', 'user', 'agentRegister',
                 'readAdmin', 'token', 'superadmin', 'service', 'project']
 
-ADMIN_HEADERS = dict(gdapi.HEADERS)
-ADMIN_HEADERS['X-API-Project-Id'] = 'USER'
-
 
 @pytest.fixture(scope='session')
 def cattle_url():
-    default_url = 'http://latest.rancher.io:8080/v1/schemas'
+    default_url = 'http://localhost:8080/v1/schemas'
     return os.environ.get('CATTLE_URL', default_url)
 
 
 def _admin_client():
     return cattle.from_env(url=cattle_url(),
-                           headers=ADMIN_HEADERS,
                            cache=False,
                            access_key='admin',
                            secret_key='adminpass')
