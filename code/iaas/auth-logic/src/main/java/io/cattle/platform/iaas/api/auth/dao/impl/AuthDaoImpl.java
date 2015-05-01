@@ -16,6 +16,7 @@ import io.cattle.platform.core.model.tables.records.ProjectMemberRecord;
 import io.cattle.platform.db.jooq.dao.impl.AbstractJooqDao;
 import io.cattle.platform.iaas.api.auth.ProjectLock;
 import io.cattle.platform.iaas.api.auth.dao.AuthDao;
+import io.cattle.platform.iaas.api.auth.github.GithubUtils;
 import io.cattle.platform.iaas.api.auth.github.resource.Member;
 import io.cattle.platform.lock.LockCallback;
 import io.cattle.platform.lock.LockManager;
@@ -368,7 +369,9 @@ public class AuthDaoImpl extends AbstractJooqDao implements AuthDao {
         //This operation is expensive if there are alot of projects and members however this is
         //only called when auth is being turned on. In most cases this will only be called once.
         Member newMember = new Member(externalId, "owner");
-        List<Account> allProjects = getAccessibleProjects(null, true, null);
+        Set<ExternalId> externalIds = new HashSet<>();
+        externalIds.add(new ExternalId(String.valueOf(getAdminAccount().getId()), ProjectConstants.RANCHER_ID));
+        List<Account> allProjects = getAccessibleProjects(externalIds, true, null);
         for(Account project: allProjects){
             List<? extends ProjectMember> members = getActiveProjectMembers(project.getId());
             boolean hasNonRancherMember = false;
