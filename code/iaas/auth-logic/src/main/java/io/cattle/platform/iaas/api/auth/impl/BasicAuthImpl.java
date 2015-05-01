@@ -56,7 +56,7 @@ public class BasicAuthImpl implements AccountLookup, Priority {
         } else if (auth[0].toLowerCase().startsWith(ProjectConstants.OAUTH_BASIC.toLowerCase()) && !SECURITY.get()) {
             String[] splits = auth[0].split("=");
             String projectId = splits.length == 2 ? splits[1] : null;
-            adminAuthLookUp.getAccountAccess(projectId);
+            accountAccess = adminAuthLookUp.getAccountAccess(projectId);
         }
         return accountAccess;
     }
