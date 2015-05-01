@@ -121,7 +121,7 @@ public class GithubTokenHandler implements TokenHandler {
         } else {
             account = authDao.getAdminAccount();
             authDao.updateAccount(account, null, GITHUB_ADMIN_ACCOUNT_KIND, userAccountInfo.getAccountId(), GITHUB_EXTERNAL_TYPE);
-            authDao.allProjectsHaveNonRancherIdMember(new ExternalId(userAccountInfo.getAccountId(), GithubUtils.USER_SCOPE));
+            authDao.allProjectsHaveNonRancherIdMember(new ExternalId(userAccountInfo.getAccountId(), GithubUtils.USER_SCOPE, userAccountInfo.getAccountName()));
         }
         account = objectManager.reload(account);
         jsonData.put("account_id", userAccountInfo.getAccountId());
