@@ -66,20 +66,19 @@ public class ProjectMemberResourceManager extends AbstractObjectResourceManager 
             return Arrays.asList(projectMember);
         }
         String projectId = (String) criteria.get("projectId");
+        List<? extends ProjectMember> members;
         if (StringUtils.isNotEmpty(projectId)) {
-            List<? extends ProjectMember> members = authDao.getActiveProjectMembers(Long.valueOf(projectId));
-            for (ProjectMember member: members){
-                member = untransform(member);
-                policy.grantObjectAccess(member);
-            }
-            return members;
+            members =  authDao.getActiveProjectMembers(Long.valueOf(projectId));
+        } else {
+            members = authDao.getActiveProjectMembers(policy.getAccountId());
         }
-        List<? extends ProjectMember> members = authDao.getActiveProjectMembers(policy.getAccountId());
+        List<ProjectMember> membersToReturn = new ArrayList<>();
         for (ProjectMember member: members){
             member = untransform(member);
+            membersToReturn.add(member);
             policy.grantObjectAccess(member);
         }
-        return members;
+        return membersToReturn;
     }
 
     @Override
