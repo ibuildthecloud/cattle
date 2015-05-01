@@ -2,7 +2,40 @@
   "resourceActions" : {
     "setmembers": {
       "input": "setProjectMembersInput",
-      "output": "setProjectMembersInput"
+      "output": "setProjectMembersInput",
+      "attributes" : {
+        "capability" : "owner"
+      }
+    },
+    "deactivate" : {
+      "attributes" : {
+        "capability" : "owner"
+      }
+    },
+    "update" : {
+      "attributes" : {
+        "capability" : "owner"
+      }
+    },
+    "delete" : {
+      "attributes" : {
+        "capability" : "owner"
+      }
+    },
+    "restore" : {
+      "attributes" : {
+        "capability" : "owner"
+      }
+    },
+    "purge" : {
+      "attributes" : {
+        "capability" : "owner"
+      }
+    },
+    "remove" : {
+      "attributes" : {
+        "capability" : "owner"
+      }
     }
   },
   "resourceFields": {

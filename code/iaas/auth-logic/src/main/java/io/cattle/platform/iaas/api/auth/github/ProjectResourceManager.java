@@ -14,9 +14,11 @@ import io.cattle.platform.iaas.api.auth.dao.AuthDao;
 import io.cattle.platform.iaas.api.auth.github.resource.Member;
 import io.cattle.platform.json.JsonMapper;
 import io.cattle.platform.object.ObjectManager;
+import io.cattle.platform.object.meta.ObjectMetaDataManager;
 import io.cattle.platform.object.meta.Relationship;
 import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.process.StandardProcess;
+import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.process.common.util.ProcessUtils;
 import io.cattle.platform.util.type.CollectionUtils;
 import io.github.ibuildthecloud.gdapi.condition.Condition;
@@ -84,7 +86,7 @@ public class ProjectResourceManager extends AbstractObjectResourceManager {
                     throw new ClientVisibleException(ResponseCodes.NOT_FOUND);
                 }
             }
-            policy.grantObjectAccess(project);
+            giveProjectAccess(project);
             return Collections.singletonList(project);
         }
         if (criteria.get("uuid") != null) {
@@ -95,6 +97,7 @@ public class ProjectResourceManager extends AbstractObjectResourceManager {
             }
             if (authDao.hasAccessToProject(project.getId(), policy.getAccountId(),
                     policy.isOption(Policy.AUTHORIZED_FOR_ALL_ACCOUNTS), policy.getExternalIds())) {
+               giveProjectAccess(project);
                 return project;
             } else {
                 throw new ClientVisibleException(ResponseCodes.NOT_FOUND);
@@ -115,9 +118,17 @@ public class ProjectResourceManager extends AbstractObjectResourceManager {
         List<Account> projects = authDao.getAccessibleProjects(policy.getExternalIds(),
             isAdmin, policy.getAccountId());
         for (Account project: projects){
-        policy.grantObjectAccess(project);
+            giveProjectAccess(project);
         }
         return  projects;
+    }
+
+    private void giveProjectAccess(Account project) {
+        Policy policy = (Policy) ApiContext.getContext().getPolicy();
+        if (authDao.isProjectOwner(project.getId(), policy.getAccountId(), policy.isOption(Policy.AUTHORIZED_FOR_ALL_ACCOUNTS), policy.getExternalIds())) {
+            DataAccessor.fields(project).withKey(ObjectMetaDataManager.CAPABILITIES_FIELD).set(Arrays.asList("owner"));
+        }
+        policy.grantObjectAccess(project);
     }
 
     @Override
