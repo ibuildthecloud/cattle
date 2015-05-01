@@ -16,7 +16,7 @@ import com.netflix.config.DynamicBooleanProperty;
 public class RancherExternalIdHandler implements ExternalIdHandler {
 
     private static final DynamicBooleanProperty SECURITY = ArchaiusUtil.getBoolean("api.security.enabled");
-    private static final DynamicBooleanProperty USE_RANCHER_IDS = ArchaiusUtil.getBoolean("api.use.rancher_id");
+    private static final DynamicBooleanProperty USE_RANCHER_IDS = ArchaiusUtil.getBoolean("api.projects.use.rancher_id");
 
     @Inject
     AuthDao authDao;

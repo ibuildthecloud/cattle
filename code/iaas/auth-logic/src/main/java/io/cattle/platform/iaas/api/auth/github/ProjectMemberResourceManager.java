@@ -1,8 +1,10 @@
 package io.cattle.platform.iaas.api.auth.github;
 
+import com.netflix.config.DynamicBooleanProperty;
 import io.cattle.platform.api.auth.ExternalId;
 import io.cattle.platform.api.auth.Policy;
 import io.cattle.platform.api.resource.AbstractObjectResourceManager;
+import io.cattle.platform.archaius.util.ArchaiusUtil;
 import io.cattle.platform.core.constants.ProjectConstants;
 import io.cattle.platform.core.dao.GenericResourceDao;
 import io.cattle.platform.core.model.Account;
@@ -20,17 +22,16 @@ import io.github.ibuildthecloud.gdapi.model.ListOptions;
 import io.github.ibuildthecloud.gdapi.request.ApiRequest;
 import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 
 public class ProjectMemberResourceManager extends AbstractObjectResourceManager {
+
+
+    private static final DynamicBooleanProperty SECURITY = ArchaiusUtil.getBoolean("api.security.enabled");
 
     @Inject
     JsonMapper jsonMapper;
@@ -91,15 +92,26 @@ public class ProjectMemberResourceManager extends AbstractObjectResourceManager 
         return new Class<?>[0];
     }
 
-    public List<ProjectMember> setMembers(Account project, List<Map<String, String>> members) {
+    public List<ProjectMember> setMembers(Account project, List<Map<String, String>> membersProvided) {
+        List<Map<String, String>> members = membersProvided;
         List<ProjectMember> membersCreated = new ArrayList<>();
+        HashSet<Member> membersTransformed = new HashSet<>();
+
+        if ((members == null || members.isEmpty()) && !SECURITY.get()){
+            members = new ArrayList<>();
+            Map<String, String> newMember = new HashMap<>();
+            String accountId = (String) ApiContext.getContext().getIdFormatter().formatId(objectManager.getType(Account.class), authDao.getAdminAccount().getId());
+            newMember.put("externalId",accountId);
+            newMember.put("externalIdType", ProjectConstants.RANCHER_ID);
+            newMember.put("role", ProjectConstants.OWNER);
+            members.add(newMember);
+        }
         if (members != null) {
             for (Map<String, String> newMember : members) {
                 if (newMember.get("externalId") == null || newMember.get("externalIdType") == null || newMember.get("role") == null) {
                     throw new ClientVisibleException(ResponseCodes.BAD_REQUEST, "InvalidFormat", "Project Member format invalid", null);
                 }
             }
-            HashSet<Member> membersTransformed = new HashSet<>();
             for (Map<String, String> newMember : members) {
                 ExternalId givenExternalId = new ExternalId(newMember.get("externalId"), newMember.get("externalIdType"));
                 ExternalId newExternalId = null;
@@ -157,7 +169,7 @@ public class ProjectMemberResourceManager extends AbstractObjectResourceManager 
             }
         }
         if (newExternalId == null){
-            throw new ClientVisibleException(ResponseCodes.BAD_REQUEST, "InvalidFormat", "Project Member format invalid", null);
+            return null;
         }
         member.setName(newExternalId.getName());
         member.setExternalId(newExternalId.getId());

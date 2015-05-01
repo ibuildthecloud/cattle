@@ -27,7 +27,7 @@ def make_accounts():
 
 @pytest.fixture(autouse=True, scope="session")
 def clean_up_projects(admin_client, request):
-    on = admin_client.create_setting(name='api.use.rancher_id', value='true')
+    on = admin_client.create_setting(name='api.projects.use.rancher_id', value='true')
     wait_setting_active(admin_client, on)
 
     def fin():
