@@ -36,15 +36,19 @@ public class AdminAuthLookUp implements AccountLookup, Priority {
         if (StringUtils.equals("true", authHeader)) {
             return null;
         }
+        String projectId = request.getServletContext().getRequest().getHeader(ProjectConstants.PROJECT_HEADER);
+        if (projectId == null || projectId.isEmpty()) {
+            projectId = request.getServletContext().getRequest().getParameter("projectId");
+        }
+        return getAccountAccessInternal(projectId);
+    }
+
+    private AccountAccess getAccountAccessInternal(String projectId){
         Account admin = authDao.getAdminAccount();
         if (admin == null){
             return null;
         }
-        String projectId = request.getServletContext().getRequest().getHeader(ProjectConstants.PROJECT_HEADER);
         Account project = null;
-        if (projectId == null || projectId.isEmpty()) {
-            projectId = request.getServletContext().getRequest().getParameter("projectId");
-        }
         if (projectId != null && !projectId.isEmpty()) {
             String id = ApiContext.getContext().getIdFormatter().parseId(projectId);
             project = authDao.getAccountById(Long.valueOf(id));
@@ -62,6 +66,10 @@ public class AdminAuthLookUp implements AccountLookup, Priority {
             accountAccess.getExternalIds().add(new ExternalId(String.valueOf(project.getId()), ProjectConstants.RANCHER_ID));
         }
         return accountAccess;
+    }
+
+    public AccountAccess getAccountAccess(String projectId){
+        return  getAccountAccessInternal(projectId);
     }
 
     @Override
