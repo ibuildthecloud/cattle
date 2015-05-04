@@ -51,9 +51,13 @@ public class AdminAuthLookUp implements AccountLookup, Priority {
         Account project = null;
         if (projectId != null && !projectId.isEmpty()) {
             String id = ApiContext.getContext().getIdFormatter().parseId(projectId);
-            project = authDao.getAccountById(Long.valueOf(id));
-            if (project == null){
-                throw new ClientVisibleException(ResponseCodes.FORBIDDEN);
+            try {
+                project = authDao.getAccountById(Long.valueOf(id));
+                if (project == null) {
+                    throw new ClientVisibleException(ResponseCodes.FORBIDDEN);
+                }
+            } catch (NumberFormatException e) {
+                // treat as though no project id was passed
             }
         }
 
