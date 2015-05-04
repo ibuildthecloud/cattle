@@ -1,6 +1,7 @@
 package io.cattle.platform.iaas.api.auth.impl;
 
 import io.cattle.platform.api.auth.ExternalId;
+import io.cattle.platform.core.constants.AccountConstants;
 import io.cattle.platform.core.constants.ProjectConstants;
 import io.cattle.platform.core.model.Account;
 import io.cattle.platform.iaas.api.auth.AccountAccess;
@@ -20,9 +21,6 @@ import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
 public class GithubOAuthImpl implements AccountLookup, Priority {
-
-
-    private static final String GITHUB_ACCOUNT_TYPE = "github";
 
     @Inject
     private AuthDao authDao;
@@ -59,7 +57,7 @@ public class GithubOAuthImpl implements AccountLookup, Priority {
         if (null == accountId) {
             return null;
         }
-        Account account = authDao.getAccountByExternalId(accountId, GITHUB_ACCOUNT_TYPE);
+        Account account = authDao.getAccountByExternalId(accountId, GithubUtils.USER_SCOPE);
         if (account == null) {
             return null;
         }
@@ -87,7 +85,7 @@ public class GithubOAuthImpl implements AccountLookup, Priority {
         }
 
         project = authDao.getAccountById(new Long(unobfuscatedId));
-        if (project != null && authDao.hasAccessToProject(project.getId(), null, account.getKind().equalsIgnoreCase("admin"), externalIds)) {
+        if (project != null && authDao.hasAccessToProject(project.getId(), null, account.getKind().equalsIgnoreCase(AccountConstants.ADMIN_KIND), externalIds)) {
             return new AccountAccess(project, externalIds);
         }
         return null;

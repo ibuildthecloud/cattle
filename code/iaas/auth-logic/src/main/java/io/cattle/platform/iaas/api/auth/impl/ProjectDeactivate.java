@@ -5,6 +5,7 @@ import io.cattle.platform.api.auth.Policy;
 import io.cattle.platform.core.constants.ProjectConstants;
 import io.cattle.platform.core.model.Account;
 import io.cattle.platform.iaas.api.auth.dao.AuthDao;
+import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.process.StandardProcess;
 import io.github.ibuildthecloud.gdapi.context.ApiContext;
@@ -20,6 +21,8 @@ public class ProjectDeactivate implements ActionHandler{
     AuthDao authDao;
     @Inject
     ObjectProcessManager objectProcessManager;
+    @Inject
+    ObjectManager objectManager;
 
     @Override
     public Object perform(String name, Object obj, ApiRequest request) {
@@ -32,11 +35,8 @@ public class ProjectDeactivate implements ActionHandler{
         if (project == null) {
             throw new ClientVisibleException(ResponseCodes.NOT_FOUND);
         }
-        if (!authDao.isProjectOwner(project.getId(), policy.getAccountId(),
-                policy.isOption(Policy.AUTHORIZED_FOR_ALL_ACCOUNTS), policy.getExternalIds())){
-            throw new ClientVisibleException(ResponseCodes.FORBIDDEN, "Forbidden", "You must be a project owner to deactivate a project", null);
-        }
         objectProcessManager.scheduleStandardProcess(StandardProcess.DEACTIVATE, project, null);
+        project = objectManager.reload(project);
         return project;
     }
 

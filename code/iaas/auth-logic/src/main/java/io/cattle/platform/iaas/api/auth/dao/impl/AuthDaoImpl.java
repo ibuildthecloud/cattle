@@ -6,6 +6,7 @@ import static io.cattle.platform.core.model.tables.ProjectMemberTable.*;
 
 import io.cattle.platform.api.auth.ExternalId;
 import io.cattle.platform.archaius.util.ArchaiusUtil;
+import io.cattle.platform.core.constants.AccountConstants;
 import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.constants.ProjectConstants;
 import io.cattle.platform.core.dao.GenericResourceDao;
@@ -59,7 +60,7 @@ public class AuthDaoImpl extends AbstractJooqDao implements AuthDao {
         return create()
                 .selectFrom(ACCOUNT)
                 .where(ACCOUNT.STATE.eq(CommonStatesConstants.ACTIVE)
-                        .and(ACCOUNT.KIND.eq("admin")))
+                        .and(ACCOUNT.KIND.eq(AccountConstants.ADMIN_KIND)))
                 .orderBy(ACCOUNT.ID.asc()).limit(1).fetchOne();
     }
 
@@ -130,12 +131,6 @@ public class AuthDaoImpl extends AbstractJooqDao implements AuthDao {
         }
         properties.put(ACCOUNT.KIND, ProjectConstants.TYPE);
         return resourceDao.createAndSchedule(Account.class, objectManager.convertToPropertiesFor(Account.class, properties));
-    }
-
-    public Account createDefaultProject(Account account) {
-        Account defaultProject = createProject(account.getName() + ProjectConstants.PROJECT_DEFAULT_NAME, null);
-        objectManager.setFields(account, ACCOUNT.PROJECT_ID, defaultProject.getId());
-        return defaultProject;
     }
 
     @Override

@@ -24,8 +24,6 @@ public interface AuthDao {
 
     Account createProject(String name, String description);
 
-    Account createDefaultProject(Account account);
-
     void updateAccount(Account account, String name, String kind, String externalId, String externalType);
 
     List<Account> getAccessibleProjects(Set<ExternalId> externalIdSet, boolean isAdmin, Long usingAccount);

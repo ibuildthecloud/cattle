@@ -2,6 +2,7 @@ package io.cattle.platform.iaas.api.auth.github;
 
 import io.cattle.platform.api.auth.ExternalId;
 import io.cattle.platform.archaius.util.ArchaiusUtil;
+import io.cattle.platform.core.constants.AccountConstants;
 import io.cattle.platform.core.model.Account;
 import io.cattle.platform.iaas.api.auth.TokenHandler;
 import io.cattle.platform.iaas.api.auth.dao.AuthDao;
@@ -47,20 +48,16 @@ public class GithubTokenHandler implements TokenHandler {
     private GithubClient client;
 
     private static final String GITHUB_REQUEST_TOKEN = "code";
-    private static final String GITHUB_USER_ACCOUNT_KIND = "user";
-    private static final String GITHUB_ADMIN_ACCOUNT_KIND = "admin";
-    private static final String GITHUB_EXTERNAL_TYPE = "github";
 
     private static final DynamicLongProperty TOKEN_EXPIRY_MILLIS = ArchaiusUtil.getLong("api.auth.jwt.token.expiry");
     private static final DynamicBooleanProperty SECURITY = ArchaiusUtil.getBoolean("api.security.enabled");
-    private static final DynamicStringProperty WHITELISTED_ORGS = ArchaiusUtil.getString("api.auth.github.allowed.orgs");
-    private static final DynamicStringProperty WHITELISTED_USERS = ArchaiusUtil.getString("api.auth.github.allowed.users");
-    private static final DynamicStringProperty ACCESS_MODE = ArchaiusUtil.getString("api.auth.github.access.mode");
 
     @Inject
     ProjectResourceManager projectResourceManager;
     @Inject
     ObjectManager objectManager;
+    @Inject
+    GithubUtils githubUtils;
 
     public Token getGithubAccessToken(ApiRequest request) throws IOException {
         Map<String, Object> requestBody = CollectionUtils.toMap(request.getRequestObject());
@@ -92,35 +89,23 @@ public class GithubTokenHandler implements TokenHandler {
             teamIds.add(info.getId());
             teamToOrg.put(info.getId(), info.getOrg());
             idList.add(info.getId());
-            externalIds.add(new ExternalId(info.getId(), GithubUtils.ORG_SCOPE, info.getOrg() + ":" + info.getName()));
+            externalIds.add(new ExternalId(info.getId(), GithubUtils.TEAM_SCOPE, info.getOrg() + ":" + info.getName()));
         }
 
         Account account;
-        boolean whiteListed = getWhitelistedUser(idList) != null;
         boolean hasAccessToAProject = authDao.hasAccessToAnyProject(externalIds, false, null);
-        if (SECURITY.get()) {
-            switch (ACCESS_MODE.get()) {
-                case "restricted":
-                    if (whiteListed || hasAccessToAProject) {
-                        break;
-                    }
-                    throw new ClientVisibleException(ResponseCodes.UNAUTHORIZED);
-                case "unrestricted":
-                    break;
-                default:
-                    throw new ClientVisibleException(ResponseCodes.UNAUTHORIZED);
-            }
-            account = authDao.getAccountByExternalId(userAccountInfo.getAccountId(), GITHUB_EXTERNAL_TYPE);
+        if (SECURITY.get() && githubUtils.isAllowed(idList, externalIds)) {
+            account = authDao.getAccountByExternalId(userAccountInfo.getAccountId(), GithubUtils.USER_SCOPE);
             if (null == account) {
-                account = authDao.createAccount(userAccountInfo.getAccountName(), GITHUB_USER_ACCOUNT_KIND, userAccountInfo.getAccountId(),
-                        GITHUB_EXTERNAL_TYPE);
+                account = authDao.createAccount(userAccountInfo.getAccountName(), AccountConstants.USER_KIND, userAccountInfo.getAccountId(),
+                        GithubUtils.USER_SCOPE);
                 if (!hasAccessToAProject) {
                     projectResourceManager.createProjectForUser(account);
                 }
             }
         } else {
             account = authDao.getAdminAccount();
-            authDao.updateAccount(account, null, GITHUB_ADMIN_ACCOUNT_KIND, userAccountInfo.getAccountId(), GITHUB_EXTERNAL_TYPE);
+            authDao.updateAccount(account, null, AccountConstants.ADMIN_KIND, userAccountInfo.getAccountId(), GithubUtils.USER_SCOPE);
             authDao.allProjectsHaveNonRancherIdMember(new ExternalId(userAccountInfo.getAccountId(), GithubUtils.USER_SCOPE, userAccountInfo.getAccountName()));
         }
         account = objectManager.reload(account);
@@ -130,47 +115,11 @@ public class GithubTokenHandler implements TokenHandler {
         jsonData.put("username", userAccountInfo.getAccountName());
         jsonData.put("team_ids", teamIds);
         jsonData.put("org_ids", orgIds);
+        jsonData.put("idList", idList);
         String accountId = (String) ApiContext.getContext().getIdFormatter().formatId(objectManager.getType(Account.class), account.getId());
         Date expiry = new Date(System.currentTimeMillis() + TOKEN_EXPIRY_MILLIS.get());
         return new Token(tokenService.generateEncryptedToken(jsonData, expiry), userAccountInfo.getAccountName(), orgNames, teamsAccountInfo, null, null,
                 account.getKind(), accountId);
-    }
-
-    protected String getWhitelistedUser(List<String> idList) {
-        if (idList == null) {
-            return null;
-        }
-        if (StringUtils.equals(WHITELISTED_USERS.get(), "*")) {
-            return "*";
-        }
-        List<String> whitelistedValues = fromCommaSeparatedString(WHITELISTED_ORGS.get());
-        whitelistedValues.addAll(fromCommaSeparatedString(WHITELISTED_USERS.get()));
-        Collection<String> whitelistedIds = Collections2.transform(whitelistedValues, new Function<String, String>() {
-            @Override
-            public String apply(String arg) {
-                return arg.split("[:]")[1];
-            }
-        });
-        Set<String> whitelist = new HashSet<>(whitelistedIds);
-        for (String id : idList) {
-            if (whitelist.contains(id)) {
-                return id;
-            }
-        }
-        return null;
-    }
-
-    protected List<String> fromCommaSeparatedString(String string) {
-        if (StringUtils.isEmpty(string)) {
-            return new ArrayList<>();
-        }
-        List<String> strings = new ArrayList<String>();
-        String[] splitted = string.split(",");
-        for (String aSplitted : splitted) {
-            String element = aSplitted.trim();
-            strings.add(element);
-        }
-        return strings;
     }
 
     @Override
