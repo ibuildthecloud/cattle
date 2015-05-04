@@ -65,6 +65,10 @@ def _set_members(client, id, members, status):
         got_members = get_plain_members(project.projectMembers())
         assert len(got_members) == len(members)
         diff_members(members, got_members)
+    elif (status == 'Attribute'):
+        with pytest.raises(AttributeError) as e:
+            project.setmembers(members=members)
+        assert 'setmembers' in e.value.message
     else:
         with pytest.raises(ApiError) as e:
             project.setmembers(members=members)
@@ -191,9 +195,9 @@ def test_set_members(project_clients, project):
     _set_members(project_clients['Owner'], project.id, None, 422)
     _set_members(project_clients['Owner'], project.id, [], 422)
     _set_members(project_clients['Owner'], project.id, members, None)
-    _set_members(project_clients['Member'], project.id, None, 422)
-    _set_members(project_clients['Member'], project.id, [], 422)
-    _set_members(project_clients['Member'], project.id, members, 403)
+    _set_members(project_clients['Member'], project.id, None, 'Attribute')
+    _set_members(project_clients['Member'], project.id, [], 'Attribute')
+    _set_members(project_clients['Member'], project.id, members, 'Attribute')
     with pytest.raises(ApiError) as e:
         _set_members(project_clients['Stranger'], project.id, None, 422)
     assert e.value.error.status == 404
@@ -302,10 +306,11 @@ def test_change_roles(project_clients, members):
     new_members = all_owners(get_plain_members(project.projectMembers()))
     project_from_member = project_clients['Member'].by_id('project',
                                                           project.id)
-    with pytest.raises(ApiError) as e:
+    with pytest.raises(AttributeError) as e:
         project_from_member.setmembers(members=new_members)
-    assert e.value.error.status == 403
+    assert 'setmembers' in e.value.message
     project.setmembers(members=new_members)
+    project_from_member = project_clients['Member'].reload(project_from_member)
     project_from_member.setmembers(members=new_members)
     project_members_after = get_plain_members(project.projectMembers())
     project_from_member_members_after = get_plain_members(
@@ -346,7 +351,8 @@ def test_multiple_owners_add_members(project_clients, members):
         'externalIdType': 'rancher_id'
     })
     _set_members(project_clients['Owner'], project.id, current_members, None)
-    _set_members(project_clients['Stranger'], project.id, current_members, 403)
+    _set_members(project_clients['Stranger'], project.id, current_members,
+                 'Attribute')
     project = project_clients['Stranger'].by_id('project', project.id)
     assert len(project.projectMembers()) == 3
     _set_members(project_clients['Member'], project.id, members, None)
@@ -372,20 +378,7 @@ def test_members_cant_delete(project_clients, members):
         'externalId': acc_id(project_clients['Member']),
         'externalIdType': 'rancher_id',
         'role': 'owner'
-    }], 403)
-
-
-def test_inactive_project(project_clients, members, project):
-    project_clients['admin'].wait_success(project.deactivate())
-    state = project_clients['admin'].by_id('project', project.id).state
-    assert state == 'inactive'
-    with pytest.raises(ApiError) as e:
-        project.setmembers(members=members)
-    assert e.value.error.status == 404
-    project = project_clients['admin'].by_id('project', project.id)
-    with pytest.raises(ApiError) as e:
-        project.setmembers(members=members)
-    assert e.value.error.status == 404
+    }], 'Attribute')
 
 
 def test_project_cant_create_project(project_clients, members, project):
@@ -423,7 +416,7 @@ def test_create_project_no_owner(project_clients):
     project = project_clients['admin'].create_project()
     project = project_clients['admin'].wait_success(project)
     PROJECTS.add(project.id)
-    assert len(project.projectMembers()) == 0
+    assert len(project.projectMembers()) == 1
 
 
 def test_list_projects_flag(project_clients):
@@ -457,9 +450,9 @@ def test_project_deactivate(admin_client, project_clients, project, members):
     project.setmembers(members=members)
     diff_members(members, get_plain_members(project.projectMembers()))
     project = project_clients['Member'].reload(project)
-    with pytest.raises(ApiError) as e:
+    with pytest.raises(AttributeError) as e:
         project.deactivate()
-    assert e.value.error.status == 403
+    assert 'deactivate' in e.value.message
     project = project_clients['Owner'].reload(project)
     project.deactivate()
     project = project_clients['Owner'].wait_success(project)

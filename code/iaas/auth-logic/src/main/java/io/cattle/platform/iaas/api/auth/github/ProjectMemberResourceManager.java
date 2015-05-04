@@ -32,6 +32,7 @@ public class ProjectMemberResourceManager extends AbstractObjectResourceManager 
 
 
     private static final DynamicBooleanProperty SECURITY = ArchaiusUtil.getBoolean("api.security.enabled");
+    private static final DynamicBooleanProperty USE_RANCHER_IDS = ArchaiusUtil.getBoolean("api.projects.use.rancher_id");
 
     @Inject
     JsonMapper jsonMapper;
@@ -96,7 +97,7 @@ public class ProjectMemberResourceManager extends AbstractObjectResourceManager 
         List<ProjectMember> membersCreated = new ArrayList<>();
         HashSet<Member> membersTransformed = new HashSet<>();
 
-        if ((members == null || members.isEmpty()) && !SECURITY.get()){
+        if ((members == null || members.isEmpty()) && (!SECURITY.get() || USE_RANCHER_IDS.get())){
             members = new ArrayList<>();
             Map<String, String> newMember = new HashMap<>();
             String accountId = (String) ApiContext.getContext().getIdFormatter().formatId(objectManager.getType(Account.class), authDao.getAdminAccount().getId());
