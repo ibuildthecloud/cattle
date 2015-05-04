@@ -1,6 +1,5 @@
 package io.cattle.platform.iaas.api.auth.github;
 
-import com.netflix.config.DynamicBooleanProperty;
 import io.cattle.platform.api.auth.ExternalId;
 import io.cattle.platform.api.auth.Policy;
 import io.cattle.platform.api.resource.AbstractObjectResourceManager;
@@ -22,11 +21,18 @@ import io.github.ibuildthecloud.gdapi.model.ListOptions;
 import io.github.ibuildthecloud.gdapi.request.ApiRequest;
 import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
+
+import com.netflix.config.DynamicBooleanProperty;
 
 public class ProjectMemberResourceManager extends AbstractObjectResourceManager {
 
@@ -100,8 +106,9 @@ public class ProjectMemberResourceManager extends AbstractObjectResourceManager 
         if ((members == null || members.isEmpty()) && (!SECURITY.get() || USE_RANCHER_IDS.get())){
             members = new ArrayList<>();
             Map<String, String> newMember = new HashMap<>();
-            String accountId = (String) ApiContext.getContext().getIdFormatter().formatId(objectManager.getType(Account.class), authDao.getAdminAccount().getId());
-            newMember.put("externalId",accountId);
+            String accountId = (String) ApiContext.getContext().getIdFormatter()
+                    .formatId(objectManager.getType(Account.class), authDao.getAdminAccount().getId());
+            newMember.put("externalId", accountId);
             newMember.put("externalIdType", ProjectConstants.RANCHER_ID);
             newMember.put("role", ProjectConstants.OWNER);
             members.add(newMember);

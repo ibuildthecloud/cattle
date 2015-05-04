@@ -85,7 +85,8 @@ public class GithubOAuthImpl implements AccountLookup, Priority {
         }
 
         project = authDao.getAccountById(new Long(unobfuscatedId));
-        if (project != null && authDao.hasAccessToProject(project.getId(), null, account.getKind().equalsIgnoreCase(AccountConstants.ADMIN_KIND), externalIds)) {
+        if (project != null && authDao.hasAccessToProject(project.getId(), null,
+                account.getKind().equalsIgnoreCase(AccountConstants.ADMIN_KIND), externalIds)) {
             return new AccountAccess(project, externalIds);
         }
         return null;

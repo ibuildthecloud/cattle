@@ -1,8 +1,5 @@
 package io.cattle.platform.iaas.api.auth.github;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.netflix.config.DynamicStringProperty;
 import io.cattle.platform.api.auth.ExternalId;
 import io.cattle.platform.archaius.util.ArchaiusUtil;
 import io.cattle.platform.core.constants.ProjectConstants;
@@ -16,12 +13,21 @@ import io.github.ibuildthecloud.gdapi.request.ApiRequest;
 import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
 import io.github.ibuildthecloud.gdapi.validation.ValidationErrorCodes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+import com.netflix.config.DynamicStringProperty;
 
 public class GithubUtils {
 
