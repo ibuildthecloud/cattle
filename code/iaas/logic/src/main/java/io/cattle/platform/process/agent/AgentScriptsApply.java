@@ -75,7 +75,7 @@ public class AgentScriptsApply extends AbstractProcessLogic implements ProcessPr
             return;
         }
 
-        statusManager.waitFor(request);
+        //statusManager.waitFor(request);
     }
 
     public ConfigItemStatusManager getStatusManager() {

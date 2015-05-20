@@ -11,6 +11,7 @@ import io.cattle.platform.engine.process.ProcessInstance;
 import io.cattle.platform.engine.process.ProcessState;
 import io.cattle.platform.eventing.EventCallOptions;
 import io.cattle.platform.framework.event.Ping;
+import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.process.base.AbstractDefaultProcessHandler;
 
 import javax.inject.Inject;
@@ -30,10 +31,18 @@ public class AgentActivate extends AbstractDefaultProcessHandler {
     @Override
     public HandlerResult handle(ProcessState state, ProcessInstance process) {
         Agent agent = (Agent) state.getResource();
+        boolean waitFor = DataAccessor.fromDataFieldOf(agent)
+                .withScope(AgentActivate.class)
+                .withKey("waitForPing")
+                .withDefault(Boolean.FALSE)
+                .as(Boolean.class);
 
-        RemoteAgent remoteAgent = agentLocator.lookupAgent(agent);
-        remoteAgent.callSync(AgentUtils.newPing(agent).withOption(Ping.STATS, true).withOption(Ping.RESOURCES, true), new EventCallOptions(PING_RETRY.get(),
-                PING_TIMEOUT.get()));
+        if (waitFor) {
+            RemoteAgent remoteAgent = agentLocator.lookupAgent(agent);
+            remoteAgent.callSync(AgentUtils.newPing(agent)
+                    .withOption(Ping.STATS, true)
+                    .withOption(Ping.RESOURCES, true), new EventCallOptions(PING_RETRY.get(), PING_TIMEOUT.get()));
+        }
 
         return new HandlerResult();
     }
