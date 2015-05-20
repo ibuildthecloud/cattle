@@ -17,7 +17,7 @@ import com.netflix.config.DynamicStringProperty;
 public class ApiKeyFilter extends AbstractDefaultResourceManagerFilter {
 
     public static final DynamicStringProperty BAD_CHARACTERS = ArchaiusUtil.getString("process.credential.create.bad.characters");
-    private final static SecureRandom random = new SecureRandom();
+    private final static SecureRandom RANDOM = new SecureRandom();
 
     @Override
     public String[] getTypes() {
@@ -41,8 +41,8 @@ public class ApiKeyFilter extends AbstractDefaultResourceManagerFilter {
         byte[] accessKey = new byte[10];
         byte[] secretKey = new byte[128];
 
-        random.nextBytes(accessKey);
-        random.nextBytes(secretKey);
+        RANDOM.nextBytes(accessKey);
+        RANDOM.nextBytes(secretKey);
 
         String accessKeyString = Hex.encodeHexString(accessKey);
         String secretKeyString = Base64.encodeBase64String(secretKey).replaceAll(BAD_CHARACTERS.get(), "");
