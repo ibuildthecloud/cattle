@@ -482,25 +482,25 @@ def test_docker_volumes(docker_client, super_client):
     c.stop(remove=True, timeout=0)
     c2.stop(remove=True, timeout=0)
 
-    _check_path(foo_vol, True, super_client)
+    _check_path(foo_vol, True, docker_client, super_client)
     foo_vol = super_client.wait_success(foo_vol.deactivate())
     foo_vol = super_client.wait_success(foo_vol.remove())
     foo_vol = super_client.wait_success(foo_vol.purge())
-    _check_path(foo_vol, False, super_client)
+    _check_path(foo_vol, False, docker_client, super_client)
 
-    _check_path(bar_vol, True, super_client)
+    _check_path(bar_vol, True, docker_client, super_client)
     bar_vol = super_client.wait_success(bar_vol.deactivate())
     bar_vol = super_client.wait_success(bar_vol.remove())
     bar_vol = super_client.wait_success(bar_vol.purge())
     # Host bind mount. Wont actually delete the dir on the host.
-    _check_path(bar_vol, True, super_client)
+    _check_path(bar_vol, True, docker_client, super_client)
 
-    _check_path(baz_vol, True, super_client)
+    _check_path(baz_vol, True, docker_client, super_client)
     baz_vol = super_client.wait_success(baz_vol.deactivate())
     baz_vol = super_client.wait_success(baz_vol.remove())
     baz_vol = super_client.wait_success(baz_vol.purge())
     # Host bind mount. Wont actually delete the dir on the host.
-    _check_path(baz_vol, True, super_client)
+    _check_path(baz_vol, True, docker_client, super_client)
 
 
 @if_docker
@@ -532,6 +532,7 @@ def test_container_fields(docker_client, super_client):
                                        cpuSet="0,1",
                                        stdinOpen=True,
                                        tty=True,
+                                       command=["true"],
                                        entryPoint=["/bin/sh", "-c"],
                                        lxcConf=expectedLxcConf,
                                        cpuShares=400,
@@ -611,9 +612,9 @@ def test_docker_mount_life_cycle(docker_client):
     check_mounts(c, 'removed', 2)
 
 
-def _check_path(volume, should_exist, super_client):
+def _check_path(volume, should_exist, client, super_client):
     path = _path_to_volume(volume)
-    c = super_client. \
+    c = client. \
         create_container(name="volume_check",
                          imageUuid="docker:cjellick/rancher-test-tools",
                          startOnCreate=False,
@@ -623,9 +624,9 @@ def _check_path(volume, should_exist, super_client):
                              '/var/lib/docker:/host/var/lib/docker',
                              '/tmp:/host/tmp'])
     c.start()
-    c = super_client.wait_success(c)
+    c = client.wait_success(c)
     if 'stop' in c:
-        c = super_client.wait_success(c.stop(timeout=1))
+        c = client.wait_success(c.stop(timeout=1))
 
     c = super_client.wait_success(c)
     assert c.state == 'stopped'

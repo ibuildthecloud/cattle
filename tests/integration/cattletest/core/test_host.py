@@ -58,6 +58,7 @@ def test_host_activate(super_client, new_context):
 
 
 def test_host_purge(super_client, new_context):
+    account_id = new_context.project.id
     image_uuid = 'sim:{}'.format(random_num())
     host = new_context.host
     agent = super_client.reload(host).agent()
@@ -66,12 +67,14 @@ def test_host_purge(super_client, new_context):
     agent = super_client.wait_success(agent)
     assert agent.state == 'active'
 
-    c1 = super_client.create_container(imageUuid=image_uuid,
+    c1 = super_client.create_container(accountId=account_id,
+                                       imageUuid=image_uuid,
                                        requestedHostId=host.id)
     c1 = super_client.wait_success(c1)
     assert c1.state == 'running'
 
-    c2 = super_client.create_container(imageUuid=image_uuid,
+    c2 = super_client.create_container(accountId=account_id,
+                                       imageUuid=image_uuid,
                                        requestedHostId=host.id)
     c2 = super_client.wait_success(c2)
     assert c2.state == 'running'

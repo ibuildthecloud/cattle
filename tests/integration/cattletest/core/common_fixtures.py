@@ -6,21 +6,8 @@ import time
 import inspect
 from datetime import datetime, timedelta
 
-ACCESS_KEY = 0
-SECRET_KEY = 1
-ACCOUNT = 2
-PROJECT_ACCOUNT = 3
-CLIENT = 4
-PROJECT_CLIENT = 5
-
 NOT_NONE = object()
 DEFAULT_TIMEOUT = 90
-DEFAULT_AGENT_URI = 'ssh://root@localhost:22'
-DEFAULT_AGENT_UUID = 'test-agent'
-SLEEP_DELAY = 0.5
-ACCOUNT_LIST = ['admin', 'agent', 'user', 'agentRegister',
-                'readAdmin', 'token', 'superadmin', 'service', 'project']
-PROJECT_ACCOUNTS = {'admin': True, 'user': True}
 _SUPER_CLIENT = None
 
 
@@ -30,16 +17,17 @@ def cattle_url():
     return os.environ.get('CATTLE_URL', default_url)
 
 
-@pytest.fixture
-def new_context(admin_user_client):
-    return create_context(admin_user_client, create_project=True,
-                          add_host=True)
+@pytest.fixture(scope='function')
+def new_context(admin_user_client, request):
+    ctx = create_context(admin_user_client, create_project=True,
+                         add_host=True)
+    request.addfinalizer(lambda: cleanup_context(admin_user_client, ctx))
+    return ctx
 
 
 @pytest.fixture(scope='session')
-def context(admin_user_client):
-    return create_context(admin_user_client, create_project=True,
-                          add_host=True)
+def context(admin_user_client, request):
+    return new_context(admin_user_client, request)
 
 
 @pytest.fixture(scope='session')
@@ -159,8 +147,8 @@ class Context(object):
 def create_context(admin_user_client, create_project=False, add_host=False,
                    kind=None):
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    name = 'Test User {}'.format(now)
-    project_name = 'Test Project {}'.format(now)
+    name = 'Integration Test User {}'.format(now)
+    project_name = 'Integration Test Project {}'.format(now)
 
     if kind is None:
         kind = 'user'
@@ -200,6 +188,25 @@ def create_context(admin_user_client, create_project=False, add_host=False,
     return Context(account=account, project=project, user_client=user_client,
                    client=project_client, host=host,
                    agent_client=agent_client, agent=agent)
+
+
+def cleanup_context(admin_user_client, context):
+    purge_account(admin_user_client, context.project)
+    purge_account(admin_user_client, context.account)
+
+
+def purge_account(admin_user_client, account):
+    account = admin_user_client.reload(account)
+    for action in ['deactivate', 'remove', 'purge']:
+        if action not in account:
+            continue
+
+        try:
+            account = account[action]()
+            if action != 'purge':
+                admin_user_client.wait_success(account)
+        except:
+            pass
 
 
 def register_simulated_host(client_or_context, return_agent=False):
@@ -277,6 +284,9 @@ def _get_super_client(request):
 
     if _is_valid_super_client(client):
         _SUPER_CLIENT = client
+        if request is not None:
+            request.addfinalizer(
+                lambda: delete_sim_instances(client))
         return client
 
     super_admin = find_one(client.list_account, name='superadmin')
@@ -437,38 +447,17 @@ def acc_id(client):
 
 
 def delete_sim_instances(super_client):
-    if super_client is None:
-        return
+    for account in super_client.list_account():
+        if account.removed is not None:
+            continue
 
-    to_delete = []
-    to_delete.extend(super_client.list_instance(state='running', limit=1000))
-    to_delete.extend(super_client.list_instance(state='starting', limit=1000))
-    to_delete.extend(super_client.list_instance(state='stopped', limit=1000))
-
-    for c in to_delete:
-        hosts = c.hosts()
-        if len(hosts) and hosts[0].kind == 'sim':
-            nsps = c.networkServiceProviders()
-            if len(nsps) > 0 and nsps[0].uuid == 'nsp-test-nsp':
-                continue
-
+        if account.name is not None and \
+                account.name.startswith("Integration Test"):
             try:
-                super_client.delete(c)
+                super_client.delete(account)
             except:
                 pass
 
-    for state in ['active', 'reconnecting']:
-        for a in super_client.list_agent(state=state, include='instances',
-                                         uri_like='delegate%'):
-            if not callable(a.instances):
-                for i in a.instances:
-                    try:
-                        if i.state != 'running' and len(i.hosts()) > 0 and \
-                                i.hosts()[0].agent().uri.startswith('sim://'):
-                            a.deactivate()
-                            break
-                    except:
-                        pass
 
 
 def one(method, *args, **kw):

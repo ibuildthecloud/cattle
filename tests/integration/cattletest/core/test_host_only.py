@@ -166,6 +166,7 @@ def test_host_only_3_hosts_same_phy(super_client, new_context):
             break
         time.sleep(0.5)
 
+    wait_for(lambda: len(agent.hosts()) == 3)
     assert len(agent.hosts()) == 3
 
     physical_host_id = agent.hosts()[0].physicalHostId

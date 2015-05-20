@@ -128,7 +128,4 @@ def test_account_context_create(new_context):
     assert new_context.project is not None
     assert new_context.account is not None
 
-    assert new_context.client.list_account()[0].id == new_context.project.id
-    assert new_context.user_client.list_account()[0].id == \
-        new_context.account.id
     assert len(new_context.user_client.list_project()) == 1

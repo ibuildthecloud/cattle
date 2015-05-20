@@ -2,8 +2,25 @@ from common_fixtures import *  # NOQA
 
 
 @pytest.fixture(scope='module')
-def ipsec_context(admin_user_client):
-    return new_context(admin_user_client)
+def ipsec_context(admin_user_client, request):
+    return new_context(admin_user_client, request)
+
+
+def create_agent_instance_nsp(admin_client, account):
+    network = create_and_activate(admin_client, 'hostOnlyNetwork',
+                                  isPublic=True,
+                                  hostVnetUri='test:///',
+                                  dynamicCreateVnet=True,
+                                  accountId=account.id)
+
+    create_and_activate(admin_client, 'subnet',
+                        networkAddress='192.168.0.0',
+                        networkId=network.id,
+                        accountId=account.id)
+
+    return create_and_activate(admin_client, 'agentInstanceProvider',
+                               networkId=network.id,
+                               accountId=account.id)
 
 
 @pytest.fixture(scope='module')

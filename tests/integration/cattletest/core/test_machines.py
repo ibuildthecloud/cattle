@@ -74,6 +74,8 @@ def test_machine_lifecycle(super_client, admin_client, admin_account,
 
     agent = super_client.create_agent(uri=uri, data=data)
     agent = super_client.wait_success(agent)
+
+    wait_for(lambda: len(agent.hosts()) == 1)
     hosts = agent.hosts()
 
     assert len(hosts) == 1

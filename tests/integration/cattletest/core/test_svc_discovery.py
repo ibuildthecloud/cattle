@@ -481,43 +481,40 @@ def test_links_after_service_remove(super_client, client, context):
     _validate_remove_service_link(service2, service1, super_client)
 
 
-def test_link_volumes(super_client, admin_client,
-                      sim_context, nsp):
-    env = admin_client.create_environment(name=random_str())
-    env = admin_client.wait_success(env)
+def test_link_volumes(super_client, client, context):
+    env = client.create_environment(name=random_str())
+    env = client.wait_success(env)
     assert env.state == "active"
 
-    image_uuid = sim_context['imageUuid']
+    image_uuid = context.image_uuid
     launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
 
-    service1 = super_client.create_service(name=random_str(),
-                                           environmentId=env.id,
-                                           networkId=nsp.networkId,
-                                           launchConfig=launch_config)
-    service1 = super_client.wait_success(service1)
-    service1 = wait_success(super_client, service1.activate(), 120)
-    container1 = _validate_compose_instance_start(super_client,
+    service1 = client.create_service(name=random_str(),
+                                     environmentId=env.id,
+                                     launchConfig=launch_config)
+    service1 = client.wait_success(service1)
+    service1 = client.wait_success(service1.activate(), 120)
+    container1 = _validate_compose_instance_start(client,
                                                   service1, env, "1")
 
-    external_container = super_client.create_container(
+    external_container = client.create_container(
         imageUuid=image_uuid,
         requestedHostId=container1.hosts()[0].id)
-    external_container = super_client.wait_success(external_container)
+    external_container = client.wait_success(external_container)
 
     launch_config = {"imageUuid": image_uuid,
                      "dataVolumesFrom": [external_container.id],
                      "labels": {'io.rancher.service.sidekick': "random"}}
 
-    service2 = super_client. \
+    service2 = client. \
         create_service(name=random_str(),
                        environmentId=env.id,
-                       networkId=nsp.networkId,
                        launchConfig=launch_config,
                        dataVolumesFromService=[service1.id])
 
-    service2 = super_client.wait_success(service2)
-    service2 = wait_success(super_client, service2.activate(), 120)
+    service2 = client.wait_success(service2)
+    service2 = client.wait_success(service2.activate(), 120)
     container2 = _validate_compose_instance_start(super_client,
                                                   service2, env, "1")
 
@@ -534,7 +531,8 @@ def test_volumes_service_links_scale_one(super_client, client, context):
     assert env.state == "active"
 
     image_uuid = context.image_uuid
-    launch_config = {"imageUuid": image_uuid}
+    launch_config = {"imageUuid": image_uuid,
+                     "labels": {'io.rancher.service.sidekick': "random"}}
     service1 = client.create_service(name=random_str(),
                                      environmentId=env.id,
                                      launchConfig=launch_config)
@@ -580,56 +578,51 @@ def test_volumes_service_links_scale_one(super_client, client, context):
                                                      s2_container.id])
 
 
-def test_volumes_service_links_scale_two(super_client, admin_client,
-                                         sim_context, nsp):
-    env = admin_client.create_environment(name=random_str())
-    env = admin_client.wait_success(env)
+def test_volumes_service_links_scale_two(super_client, client, context):
+    env = client.create_environment(name=random_str())
+    env = client.wait_success(env)
     assert env.state == "active"
 
-    image_uuid = sim_context['imageUuid']
+    image_uuid = context.image_uuid
     launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
-    service1 = super_client.create_service(name=random_str(),
+    service1 = client.create_service(name=random_str(),
                                            environmentId=env.id,
-                                           networkId=nsp.networkId,
                                            launchConfig=launch_config,
                                            scale=2)
-    service1 = super_client.wait_success(service1)
+    service1 = client.wait_success(service1)
 
     launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
-    service2 = super_client. \
+    service2 = client. \
         create_service(name=random_str(),
                        environmentId=env.id,
-                       networkId=nsp.networkId,
                        launchConfig=launch_config,
                        dataVolumesFromService=[service1.id],
                        scale=2)
-    service2 = super_client.wait_success(service2)
+    service2 = client.wait_success(service2)
 
-    service1 = wait_success(super_client, service1.activate(), 120)
-    service2 = super_client.wait_success(service2, 120)
+    service1 = client.wait_success(service1.activate(), 120)
+    service2 = client.wait_success(service2, 120)
 
     assert service1.state == "active"
     assert service2.state == "active"
 
     # 2. validate instances
-    _validate_compose_instance_start(super_client,
-                                     service1, env, "1")
-    _validate_compose_instance_start(super_client,
-                                     service1, env, "2")
-    s21_container = _validate_compose_instance_start(super_client,
+    _validate_compose_instance_start(client, service1, env, "1")
+    _validate_compose_instance_start(client, service1, env, "2")
+    s21_container = _validate_compose_instance_start(client,
                                                      service2, env, "1")
-    s22_container = _validate_compose_instance_start(super_client,
+    s22_container = _validate_compose_instance_start(client,
                                                      service2, env, "2")
 
     assert len(s22_container.dataVolumesFrom) == 1
     assert len(s21_container.dataVolumesFrom) == 1
 
 
-def test_remove_active_service(super_client, admin_client, sim_context, nsp):
-    env = admin_client.create_environment(name=random_str())
-    env = admin_client.wait_success(env)
+def test_remove_active_service(super_client, client, context):
+    env = client.create_environment(name=random_str())
+    env = client.wait_success(env)
     assert env.state == "active"
 
     image_uuid = context.image_uuid
@@ -725,7 +718,7 @@ def _validate_instance_start(service, super_client, name):
     return instances[0]
 
 
-def test_validate_service_scaleup_scaledown(client, context):
+def test_validate_service_scaleup_scaledown(super_client, client, context):
     env = client.create_environment(name=random_str())
     env = client.wait_success(env)
     assert env.state == "active"
@@ -1168,42 +1161,37 @@ def test_sidekick_services_activate(super_client, client, context):
     assert service4.state == "inactive"
 
 
-def test_sidekick_restart_instances(super_client,
-                                    admin_client, sim_context, nsp):
-    env = admin_client.create_environment(name=random_str())
-    env = admin_client.wait_success(env)
+def test_sidekick_restart_instances(super_client, client, context):
+    env = client.create_environment(name=random_str())
+    env = client.wait_success(env)
     assert env.state == "active"
 
     # create service1/service2 with the same sidekick label defined
-    image_uuid = sim_context['imageUuid']
+    image_uuid = context.image_uuid
     launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
 
-    service1 = super_client.create_service(name=random_str(),
+    service1 = client.create_service(name=random_str(),
                                            environmentId=env.id,
-                                           networkId=nsp.networkId,
                                            launchConfig=launch_config,
                                            scale=2)
-    service1 = super_client.wait_success(service1)
+    service1 = client.wait_success(service1)
 
-    service2 = super_client.create_service(name=random_str(),
+    service2 = client.create_service(name=random_str(),
                                            environmentId=env.id,
-                                           networkId=nsp.networkId,
                                            launchConfig=launch_config, scale=2)
-    service2 = super_client.wait_success(service2)
+    service2 = client.wait_success(service2)
 
     # activate service1, service 2 should be activated too
-    service1 = wait_success(super_client, service1.activate(), 120)
+    service1 = client.wait_success(service1.activate(), 120)
     assert service1.state == "active"
-    service2 = super_client.wait_success(service2, 120)
+    service2 = client.wait_success(service2, 120)
     assert service2.state == "active"
 
-    instance11 = _validate_compose_instance_start(super_client,
-                                                  service1, env, "1")
-    _validate_compose_instance_start(super_client, service1, env, "2")
-    _validate_compose_instance_start(super_client, service2, env, "1")
-    instance22 = _validate_compose_instance_start(super_client,
-                                                  service2, env, "2")
+    instance11 = _validate_compose_instance_start(client, service1, env, "1")
+    _validate_compose_instance_start(client, service1, env, "2")
+    _validate_compose_instance_start(client, service2, env, "1")
+    instance22 = _validate_compose_instance_start(client, service2, env, "2")
 
     instance_service_map1 = super_client. \
         list_serviceExposeMap(serviceId=service1.id, state="active")
@@ -1215,15 +1203,15 @@ def test_sidekick_restart_instances(super_client,
 
     # stop instance11, destroy instance12 and call update on a service1
     # scale should be restored
-    wait_success(super_client, instance11.stop())
-    _instance_remove(instance22, super_client)
-    service1 = super_client.update(service1, scale=2, name=service1.name)
-    service1 = super_client.wait_success(service1, 120)
+    client.wait_success(instance11.stop())
+    _instance_remove(instance22, client)
+    service1 = client.update(service1, scale=2, name=service1.name)
+    service1 = client.wait_success(service1, 120)
 
-    _validate_compose_instance_start(super_client, service1, env, "1")
-    _validate_compose_instance_start(super_client, service1, env, "2")
-    _validate_compose_instance_start(super_client, service2, env, "1")
-    _validate_compose_instance_start(super_client, service2, env, "2")
+    _validate_compose_instance_start(client, service1, env, "1")
+    _validate_compose_instance_start(client, service1, env, "2")
+    _validate_compose_instance_start(client, service2, env, "1")
+    _validate_compose_instance_start(client, service2, env, "2")
 
     instance_service_map1 = super_client. \
         list_serviceExposeMap(serviceId=service1.id, state="active")
@@ -1234,49 +1222,47 @@ def test_sidekick_restart_instances(super_client,
     assert len(instance_service_map2) == 2
 
 
-def test_sidekick_scaleup(super_client, admin_client, sim_context, nsp):
-    env = admin_client.create_environment(name=random_str())
-    env = admin_client.wait_success(env)
+def test_sidekick_scaleup(super_client, client, context):
+    env = client.create_environment(name=random_str())
+    env = client.wait_success(env)
     assert env.state == "active"
 
     # create service1/service2 with the same sidekick label defined
-    image_uuid = sim_context['imageUuid']
+    image_uuid = context.image_uuid
     launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
 
-    service1 = super_client.create_service(name=random_str(),
+    service1 = client.create_service(name=random_str(),
                                            environmentId=env.id,
-                                           networkId=nsp.networkId,
                                            launchConfig=launch_config,
                                            scale=1)
-    service1 = super_client.wait_success(service1)
+    service1 = client.wait_success(service1)
 
-    service2 = super_client.create_service(name=random_str(),
+    service2 = client.create_service(name=random_str(),
                                            environmentId=env.id,
-                                           networkId=nsp.networkId,
                                            launchConfig=launch_config, scale=1)
-    service2 = super_client.wait_success(service2)
+    service2 = client.wait_success(service2)
 
     # activate service1, service 2 should be activated too
-    service1 = wait_success(super_client, service1.activate(), 120)
+    service1 = client.wait_success(service1.activate(), 120)
     assert service1.state == "active"
-    service2 = super_client.wait_success(service2, 120)
+    service2 = client.wait_success(service2, 120)
     assert service2.state == "active"
 
-    _validate_compose_instance_start(super_client, service1, env, "1")
-    _validate_compose_instance_start(super_client, service2, env, "1")
+    _validate_compose_instance_start(client, service1, env, "1")
+    _validate_compose_instance_start(client, service2, env, "1")
 
     # scale up service1, verify that the service 2 was scaled up and updated
-    service1 = super_client.update(service1, scale=2, name=service1.name)
-    _wait_compose_instance_start(super_client, service1, env, "1")
-    _wait_compose_instance_start(super_client, service1, env, "2")
-    _wait_compose_instance_start(super_client, service2, env, "1")
-    _wait_compose_instance_start(super_client, service2, env, "2")
+    service1 = client.update(service1, scale=2, name=service1.name)
+    _wait_compose_instance_start(client, service1, env, "1")
+    _wait_compose_instance_start(client, service1, env, "2")
+    _wait_compose_instance_start(client, service2, env, "1")
+    _wait_compose_instance_start(client, service2, env, "2")
 
-    service1 = super_client.wait_success(service1, 120)
+    service1 = client.wait_success(service1, 120)
     assert service1.state == "active"
     assert service1.scale == 2
-    service2 = super_client.wait_success(service2, 120)
+    service2 = client.wait_success(service2, 120)
     assert service2.state == "active"
     assert service2.scale == 2
 
@@ -1289,31 +1275,29 @@ def test_sidekick_scaleup(super_client, admin_client, sim_context, nsp):
     assert len(instance_service_map2) == 2
 
 
-def test_sidekick_diff_scale(super_client, admin_client, sim_context, nsp):
-    env = admin_client.create_environment(name=random_str())
-    env = admin_client.wait_success(env)
+def test_sidekick_diff_scale(super_client, client, context):
+    env = client.create_environment(name=random_str())
+    env = client.wait_success(env)
     assert env.state == "active"
 
     # create service1/service2 with the same sidekick label defined,
     # but diff scale - should fail
-    image_uuid = sim_context['imageUuid']
+    image_uuid = context.image_uuid
     launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
 
-    service1 = super_client.create_service(name=random_str(),
-                                           environmentId=env.id,
-                                           networkId=nsp.networkId,
-                                           launchConfig=launch_config,
-                                           scale=2)
-    service1 = super_client.wait_success(service1)
+    service1 = client.create_service(name=random_str(),
+                                     environmentId=env.id,
+                                     launchConfig=launch_config,
+                                     scale=2)
+    service1 = client.wait_success(service1)
     assert service1.scale == 2
 
-    service2 = super_client.create_service(name=random_str(),
-                                           environmentId=env.id,
-                                           networkId=nsp.networkId,
-                                           launchConfig=launch_config,
-                                           scale=3)
-    service2 = super_client.wait_success(service2)
+    service2 = client.create_service(name=random_str(),
+                                     environmentId=env.id,
+                                     launchConfig=launch_config,
+                                     scale=3)
+    service2 = client.wait_success(service2)
     assert service2.scale == 2
 
 

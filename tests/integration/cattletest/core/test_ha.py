@@ -33,8 +33,7 @@ def test_container_ha_default(super_client, new_context):
                 logging.warn('ProcessExecution: %s' % pe)
 
     assert c.state == 'stopped'
-    assert _process_names(processes) == set(['instance.create',
-                                             'instance.stop'])
+    assert _process_names(processes) == {'instance.create', 'instance.stop'}
 
 
 def test_container_ha_stop(super_client, new_context):
@@ -58,9 +57,9 @@ def test_container_ha_stop(super_client, new_context):
     c = super_client.wait_success(c)
     assert c.state == 'stopped'
 
-    assert _process_names(processes) == set(['instance.create',
-                                             'instance.restart',
-                                             'instance.stop'])
+    assert _process_names(processes) == {'instance.create',
+                                         'instance.restart',
+                                         'instance.stop'}
 
 
 def test_container_ha_restart(super_client, new_context):
@@ -85,10 +84,10 @@ def test_container_ha_restart(super_client, new_context):
     c = super_client.wait_success(c)
     assert c.state == 'running'
 
-    assert _process_names(processes) == set(['instance.create',
-                                             'instance.restart',
-                                             'instance.stop',
-                                             'instance.start'])
+    assert _process_names(processes) == {'instance.create',
+                                         'instance.restart',
+                                         'instance.stop',
+                                         'instance.start'}
 
 
 def test_container_ha_remove(super_client, new_context):
@@ -113,10 +112,10 @@ def test_container_ha_remove(super_client, new_context):
     c = super_client.wait_success(c)
     assert c.state == 'removed'
 
-    assert _process_names(processes) == set(['instance.create',
-                                             'instance.restart',
-                                             'instance.stop',
-                                             'instance.remove'])
+    assert _process_names(processes) == {'instance.create',
+                                         'instance.restart',
+                                         'instance.stop',
+                                         'instance.remove'}
 
 
 def process_executions(cli, id=None):
