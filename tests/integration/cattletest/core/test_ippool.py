@@ -130,11 +130,13 @@ def test_ip_pool_associate(super_client, ip_pool):
     assert assocs[0].removed is not None
 
 
-def test_virtual_machine_with_public_ip(super_client, sim_context, ip_pool,
-                                        network):
-    image_uuid = sim_context['imageUuid']
-    vm = super_client.create_virtual_machine(imageUuid=image_uuid,
-                                             networkIds=[network.id],
+def test_virtual_machine_with_public_ip(super_client, new_context, ip_pool):
+    account = new_context.project
+    network_id = new_context.nsp.networkId
+    image_uuid = new_context.image_uuid
+    vm = super_client.create_virtual_machine(accountId=account.id,
+                                             imageUuid=image_uuid,
+                                             networkIds=[network_id],
                                              publicIpAddressPoolId=ip_pool.id)
 
     vm = super_client.wait_success(vm)
@@ -186,7 +188,8 @@ def test_virtual_machine_with_public_ip(super_client, sim_context, ip_pool,
 def test_virtual_machine_assigned_ip_field(super_client, sim_context,
                                            ip_pool, network):
     image_uuid = sim_context['imageUuid']
-    vm = super_client.create_virtual_machine(imageUuid=image_uuid,
+    vm = super_client.create_virtual_machine(accountId=context.project.id,
+                                             imageUuid=image_uuid,
                                              networkIds=[network.id],
                                              publicIpAddressPoolId=ip_pool.id)
     vm = super_client.wait_success(vm)
@@ -210,11 +213,13 @@ def test_virtual_machine_no_assigned_ip_field(super_client, sim_context):
     assert vm.primaryAssociatedIpAddress is None
 
 
-def test_virtual_machine_with_public_ip_restart(super_client, sim_context,
-                                                ip_pool, network):
-    image_uuid = sim_context['imageUuid']
-    vm = super_client.create_virtual_machine(imageUuid=image_uuid,
-                                             networkIds=[network.id],
+def test_virtual_machine_with_public_ip_restart(super_client,
+                                                context, ip_pool):
+    network_id = context.nsp.networkId
+    image_uuid = context.image_uuid
+    vm = super_client.create_virtual_machine(accountId=context.project.id,
+                                             imageUuid=image_uuid,
+                                             networkIds=[network_id],
                                              publicIpAddressPoolId=ip_pool.id)
 
     vm = super_client.wait_success(vm)

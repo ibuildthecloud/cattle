@@ -1,28 +1,27 @@
 from common_fixtures import *  # NOQA
 
 
-def test_host_deactivate(admin_user_client, new_sim_context):
-    host = new_sim_context['host']
-    agent = new_sim_context['agent']
+def test_host_deactivate(super_client, new_context):
+    host = new_context.host
+    agent = super_client.reload(host).agent()
 
     assert host.state == 'active'
-    agent = admin_user_client.wait_success(agent)
+    agent = super_client.wait_success(agent)
     assert agent.state == 'active'
 
-    host = admin_user_client.wait_success(host.deactivate())
+    host = super_client.wait_success(host.deactivate())
     assert host.state == 'inactive'
 
-    agent = admin_user_client.wait_success(agent)
+    agent = super_client.wait_success(agent)
     assert agent.state == 'inactive'
 
 
-def test_host_deactivate_two_hosts(admin_user_client, super_client,
-                                   new_sim_context):
-    host = new_sim_context['host']
-    agent = new_sim_context['agent']
+def test_host_deactivate_two_hosts(super_client, new_context):
+    host = new_context.host
+    agent = super_client.reload(host).agent()
 
     assert host.state == 'active'
-    agent = admin_user_client.wait_success(agent)
+    agent = super_client.wait_success(agent)
     assert agent.state == 'active'
 
     # Create another host using the same agent
@@ -31,37 +30,37 @@ def test_host_deactivate_two_hosts(admin_user_client, super_client,
     assert other_host.state == 'active'
     assert other_host.agentId == agent.id
 
-    host = admin_user_client.wait_success(host.deactivate())
+    host = super_client.wait_success(host.deactivate())
     assert host.state == 'inactive'
 
-    agent = admin_user_client.wait_success(agent)
+    agent = super_client.wait_success(agent)
     assert agent.state == 'active'
 
 
-def test_host_activate(admin_user_client, new_sim_context):
-    host = new_sim_context['host']
-    agent = new_sim_context['agent']
+def test_host_activate(super_client, new_context):
+    host = new_context.host
+    agent = super_client.reload(host).agent()
 
     assert host.state == 'active'
-    agent = admin_user_client.wait_success(agent)
+    agent = super_client.wait_success(agent)
     assert agent.state == 'active'
 
-    host = admin_user_client.wait_success(host.deactivate())
+    host = super_client.wait_success(host.deactivate())
     assert host.state == 'inactive'
 
-    agent = admin_user_client.wait_success(agent)
+    agent = super_client.wait_success(agent)
     assert agent.state == 'inactive'
 
-    host = admin_user_client.wait_success(host.activate())
+    host = super_client.wait_success(host.activate())
     assert host.state == 'active'
-    agent = admin_user_client.wait_success(agent)
+    agent = super_client.wait_success(agent)
     assert agent.state == 'active'
 
 
-def test_host_purge(super_client, new_sim_context):
+def test_host_purge(super_client, new_context):
     image_uuid = 'sim:{}'.format(random_num())
-    host = new_sim_context['host']
-    agent = new_sim_context['agent']
+    host = new_context.host
+    agent = super_client.reload(host).agent()
 
     assert host.state == 'active'
     agent = super_client.wait_success(agent)

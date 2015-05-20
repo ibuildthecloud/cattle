@@ -1,9 +1,14 @@
 from common_fixtures import *  # NOQA
 
 
-@pytest.fixture(scope='session')
-def ipsec_nsp(super_client, sim_context):
-    nsp = create_agent_instance_nsp(super_client, sim_context)
+@pytest.fixture(scope='module')
+def ipsec_context(admin_user_client):
+    return new_context(admin_user_client)
+
+
+@pytest.fixture(scope='module')
+def ipsec_nsp(super_client, ipsec_context):
+    nsp = create_agent_instance_nsp(super_client, ipsec_context.project)
 
     create_and_activate(super_client, 'ipsecTunnelService',
                         networkId=nsp.networkId,
@@ -12,8 +17,8 @@ def ipsec_nsp(super_client, sim_context):
     return nsp
 
 
-def test_ipsec_create(super_client, sim_context):
-    nsp = create_agent_instance_nsp(super_client, sim_context)
+def test_ipsec_create(super_client, ipsec_context):
+    nsp = create_agent_instance_nsp(super_client, ipsec_context.project)
 
     assert_required_fields(super_client.create_ipsec_tunnel_service,
                            networkId=nsp.networkId)
@@ -27,8 +32,10 @@ def test_ipsec_create(super_client, sim_context):
     assert ipsec.networkServiceProviderId == nsp.id
 
 
-def test_ipsec_nic_activate(super_client, sim_context, ipsec_nsp):
-    c = super_client.create_container(imageUuid=sim_context['imageUuid'],
+def test_ipsec_nic_activate(super_client, ipsec_context, ipsec_nsp):
+    c = super_client.create_container(accountId=ipsec_context.project.id,
+                                      networkMode=None,
+                                      imageUuid=ipsec_context.image_uuid,
                                       networkIds=[ipsec_nsp.networkId],
                                       startOnCreate=False)
     c = super_client.wait_success(c)
@@ -56,8 +63,10 @@ def test_ipsec_nic_activate(super_client, sim_context, ipsec_nsp):
     assert len(items) == 0
 
 
-def test_ipsec_host_ipaddress_activate(super_client, sim_context, ipsec_nsp):
-    c = super_client.create_container(imageUuid=sim_context['imageUuid'],
+def test_ipsec_host_ipaddress_activate(super_client, ipsec_context, ipsec_nsp):
+    c = super_client.create_container(accountId=ipsec_context.project.id,
+                                      networkMode=None,
+                                      imageUuid=ipsec_context.image_uuid,
                                       networkIds=[ipsec_nsp.networkId])
     c = super_client.wait_success(c)
     assert c.state == 'running'
