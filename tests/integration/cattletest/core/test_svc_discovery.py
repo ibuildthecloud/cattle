@@ -540,7 +540,7 @@ def test_volumes_service_links_scale_one(super_client, client, context):
                                      launchConfig=launch_config)
     service1 = client.wait_success(service1)
 
-    launch_config = {"imageUuid": image_uuid
+    launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
     service2 = client. \
         create_service(name=random_str(),
@@ -1121,55 +1121,50 @@ def test_validate_labels(client, context):
     assert all(item in instance2.labels for item in result_labels_2) is True
 
 
-def test_sidekick_services_activate(super_client,
-                                    admin_client, sim_context, nsp):
-    env = admin_client.create_environment(name=random_str())
-    env = admin_client.wait_success(env)
+def test_sidekick_services_activate(super_client, client, context):
+    env = client.create_environment(name=random_str())
+    env = client.wait_success(env)
     assert env.state == "active"
 
     # create service1/service2 with the same sidekick label defined
     # service3 with a diff sidekick label, and service4 with no label
-    image_uuid = sim_context['imageUuid']
+    image_uuid = context.image_uuid
     launch_config = {"imageUuid": image_uuid,
                      "labels": {'io.rancher.service.sidekick': "random"}}
 
-    service1 = super_client.create_service(name=random_str(),
-                                           environmentId=env.id,
-                                           networkId=nsp.networkId,
-                                           launchConfig=launch_config)
-    service1 = super_client.wait_success(service1)
+    service1 = client.create_service(name=random_str(),
+                                     environmentId=env.id,
+                                     launchConfig=launch_config)
+    service1 = client.wait_success(service1)
 
-    service2 = super_client.create_service(name=random_str(),
-                                           environmentId=env.id,
-                                           networkId=nsp.networkId,
-                                           launchConfig=launch_config)
-    service2 = super_client.wait_success(service2)
+    service2 = client.create_service(name=random_str(),
+                                     environmentId=env.id,
+                                     launchConfig=launch_config)
+    service2 = client.wait_success(service2)
 
     launch_config1 = {"imageUuid": image_uuid}
-    service3 = super_client.create_service(name=random_str(),
-                                           environmentId=env.id,
-                                           networkId=nsp.networkId,
-                                           launchConfig=launch_config1)
-    service3 = super_client.wait_success(service3)
+    service3 = client.create_service(name=random_str(),
+                                     environmentId=env.id,
+                                     launchConfig=launch_config1)
+    service3 = client.wait_success(service3)
 
     launch_config2 = {"imageUuid": image_uuid,
                       "labels": {'io.rancher.service.sidekick': "random123"}}
-    service4 = super_client.create_service(name=random_str(),
-                                           environmentId=env.id,
-                                           networkId=nsp.networkId,
-                                           launchConfig=launch_config2)
-    service4 = super_client.wait_success(service4)
+    service4 = client.create_service(name=random_str(),
+                                     environmentId=env.id,
+                                     launchConfig=launch_config2)
+    service4 = client.wait_success(service4)
 
     # activate service1, service 2 should be activated too
-    service1 = wait_success(super_client, service1.activate(), 120)
+    service1 = client.wait_success(service1.activate(), 120)
     assert service1.state == "active"
-    service2 = super_client.wait_success(service2, 120)
+    service2 = client.wait_success(service2, 120)
     assert service2.state == "active"
 
     # service 3 and 4 should be inactive
-    service3 = super_client.wait_success(service3)
+    service3 = client.wait_success(service3)
     assert service3.state == "inactive"
-    service4 = super_client.wait_success(service4)
+    service4 = client.wait_success(service4)
     assert service4.state == "inactive"
 
 
