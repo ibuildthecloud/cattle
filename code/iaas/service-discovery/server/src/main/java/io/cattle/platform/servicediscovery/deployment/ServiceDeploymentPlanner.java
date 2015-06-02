@@ -16,14 +16,14 @@ import java.util.List;
  */
 public abstract class ServiceDeploymentPlanner {
 
-    protected List<Service> services;
+    protected Service service;
     protected List<DeploymentUnit> healthyUnits = new ArrayList<>();
     private List<DeploymentUnit> unhealthyUnits = new ArrayList<>();
     protected DeploymentServiceContext context;
 
-    public ServiceDeploymentPlanner(List<Service> services, List<DeploymentUnit> units,
+    public ServiceDeploymentPlanner(Service service, List<DeploymentUnit> units,
             DeploymentServiceContext context) {
-        this.services = services;
+        this.service = service;
         this.context = context;
 
         if (units != null) {

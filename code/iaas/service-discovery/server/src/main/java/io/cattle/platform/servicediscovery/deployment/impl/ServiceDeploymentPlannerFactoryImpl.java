@@ -12,24 +12,19 @@ import java.util.Map;
 public class ServiceDeploymentPlannerFactoryImpl implements ServiceDeploymentPlannerFactory {
 
     @Override
-    public ServiceDeploymentPlanner createServiceDeploymentPlanner(List<Service> services, List<DeploymentUnit> units,
+    public ServiceDeploymentPlanner createServiceDeploymentPlanner(Service service, List<DeploymentUnit> units,
             DeploymentServiceContext context) {
 
-        if (services.isEmpty()) {
-            return null;
-        }
-
-        Service service = services.get(0);
         Map<String, String> serviceLabels = context.sdService.getServiceLabels(service);
         String globalService = serviceLabels.get(ServiceDiscoveryConstants.LABEL_SERVICE_GLOBAL);
 
         if (service.getKind().equalsIgnoreCase(ServiceDiscoveryConstants.KIND.EXTERNALSERVICE.name())
                 || service.getKind().equalsIgnoreCase(ServiceDiscoveryConstants.KIND.DNSSERVICE.name())) {
-            return new ExternalServiceDeploymentPlanner(services, units, context);
+            return new ExternalServiceDeploymentPlanner(service, units, context);
         } else if (globalService != null) {
-            return new GlobalServiceDeploymentPlanner(services, units, context);
+            return new GlobalServiceDeploymentPlanner(service, units, context);
         } else {
-            return new DefaultServiceDeploymentPlanner(services, units, context);
+            return new DefaultServiceDeploymentPlanner(service, units, context);
         }
     }
 

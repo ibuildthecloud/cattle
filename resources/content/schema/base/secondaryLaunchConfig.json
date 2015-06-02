@@ -1,0 +1,9 @@
+{
+    "resourceFields": {
+        "name":{
+            "type": "string",
+            "required": true,
+            "nullable": false
+        }
+    }
+}

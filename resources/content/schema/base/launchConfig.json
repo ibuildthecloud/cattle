@@ -1,0 +1,12 @@
+{
+    "resourceFields": {
+        "dataVolumesFromLaunchConfigs": {
+            "type" : "array[string]",
+            "nullable" : true
+        },
+        "networkLaunchConfig": {
+            "type" : "string",
+            "nullable" : true
+        }
+    }
+}

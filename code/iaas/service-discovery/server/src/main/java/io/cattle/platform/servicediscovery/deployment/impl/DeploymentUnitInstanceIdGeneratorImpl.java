@@ -1,21 +1,20 @@
 package io.cattle.platform.servicediscovery.deployment.impl;
 
 import io.cattle.platform.core.model.Environment;
-import io.cattle.platform.core.model.Service;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitInstanceIdGenerator;
 
 import java.util.Collections;
 import java.util.List;
 
 public class DeploymentUnitInstanceIdGeneratorImpl implements DeploymentUnitInstanceIdGenerator {
-    Service service;
+    String launchConfigName;
     Environment env;
     List<Integer> usedIds;
     
-    public DeploymentUnitInstanceIdGeneratorImpl(Environment env, Service service, List<Integer> usedIds) {
-        this.service = service;
+    public DeploymentUnitInstanceIdGeneratorImpl(Environment env, List<Integer> usedIds, String launchConfigName) {
         this.env = env;
         this.usedIds = usedIds;
+        this.launchConfigName = launchConfigName;
     }
     
     @Override
