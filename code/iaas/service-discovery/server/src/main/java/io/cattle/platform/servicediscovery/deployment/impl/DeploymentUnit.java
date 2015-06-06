@@ -22,11 +22,9 @@ import java.util.UUID;
 public class DeploymentUnit {
 
     String uuid;
-    Map<Long, Map<String, DeploymentUnitInstance>> serviceLaunchConfigToInstance = new HashMap<>();
-    Map<Long, List<String>> serviceLaunchConfigNames = new HashMap<>();
     DeploymentServiceContext context;
     Map<String, String> unitLabels = new HashMap<>();
-    Map<Long, Service> services = new HashMap<>();
+    Map<Long, DeploymentUnitService> svc = new HashMap<>();
 
     private static List<String> supportedUnitLabels = Arrays
             .asList(ServiceDiscoveryConstants.LABEL_SERVICE_REQUESTED_HOST_ID);
@@ -42,12 +40,8 @@ public class DeploymentUnit {
         this(context, uuid, services);
         for (DeploymentUnitInstance instance : deploymentUnitInstances) {
             Service service = instance.getService();
-            Map<String, DeploymentUnitInstance> launchConfigToInstance = new HashMap<>();
-            if (serviceLaunchConfigToInstance.get(service.getId()) != null) {
-                launchConfigToInstance = serviceLaunchConfigToInstance.get(service.getId());
-            }
-            launchConfigToInstance.put(instance.getLaunchConfigName(), instance);
-            serviceLaunchConfigToInstance.put(service.getId(), launchConfigToInstance);
+            DeploymentUnitService duService = svc.get(service.getId());
+            duService.addDeploymentInstance(instance.getLaunchConfigName(), instance);
         }
         setLabels(labels);
     }
@@ -56,11 +50,8 @@ public class DeploymentUnit {
         this.context = context;
         this.uuid = uuid;
         for (Service service : services) {
-            this.services.put(service.getId(), service);
-        }
-        for (Service service : services) {
-            this.serviceLaunchConfigNames.put(service.getId(),
-                    this.context.sdService.getServiceLaunchConfigNames(service));
+            this.svc.put(service.getId(),
+                    new DeploymentUnitService(service, this.context.sdService.getServiceLaunchConfigNames(service), context));
         }
     }
     
@@ -83,29 +74,10 @@ public class DeploymentUnit {
     }
 
     private void createMissingUnitInstances(Map<Long, DeploymentUnitInstanceIdGenerator> svcInstanceIdGenerator) {
-        Integer order = null;
-        for (Long serviceId : serviceLaunchConfigNames.keySet()) {
-            Service service = services.get(serviceId);
-            Map<String, DeploymentUnitInstance> launchConfigInstances = serviceLaunchConfigToInstance.get(serviceId);
-            if (launchConfigInstances == null) {
-                launchConfigInstances = new HashMap<>();
-            }
-            for (String launchConfigName : serviceLaunchConfigNames.get(serviceId)) {
-                if (!launchConfigInstances.containsKey(launchConfigName)) {
-                    if (order == null) {
-                        order = svcInstanceIdGenerator.get(serviceId).getNextAvailableId(launchConfigName);
-                    }
-                    String instanceName = context.sdService.generateServiceInstanceName(service,
-                            launchConfigName, order);
-                    DeploymentUnitInstance deploymentUnitInstance = context.deploymentUnitInstanceFactory
-                            .createDeploymentUnitInstance(context, uuid, service, instanceName, null, null,
-                                    launchConfigName);
-                    launchConfigInstances.put(launchConfigName, deploymentUnitInstance);
-                }
-            }
-            serviceLaunchConfigToInstance.put(serviceId, launchConfigInstances);
+        for (Long serviceId : svc.keySet()) {
+            DeploymentUnitService duService = svc.get(serviceId);
+            duService.createMissingInstances(svcInstanceIdGenerator.get(serviceId), uuid);
         }
-
     }
 
     public boolean isError() {
@@ -151,10 +123,10 @@ public class DeploymentUnit {
          */
         createMissingUnitInstances(svcInstanceIdGenerator);
 
-        for (Long serviceId : serviceLaunchConfigNames.keySet()) {
-            List<String> launchConfigNames = serviceLaunchConfigNames.get(serviceId);
-            for (String launchConfigName : launchConfigNames) {
-                createInstance(launchConfigName, services.get(serviceId));
+        for (Long serviceId : svc.keySet()) {
+            DeploymentUnitService duService = svc.get(serviceId);
+            for (String launchConfigName : duService.getLaunchConfigNames()) {
+                createInstance(launchConfigName, duService.getService());
             }
         }
     }
@@ -269,8 +241,8 @@ public class DeploymentUnit {
     }
 
     public boolean isComplete() {
-        for (Long serviceId : services.keySet()) {
-            if (serviceLaunchConfigToInstance.get(serviceId).size() != serviceLaunchConfigNames.get(serviceId).size()) {
+        for (DeploymentUnitService duService : svc.values()) {
+            if (!duService.isComplete()) {
                 return false;
             }
         }
@@ -334,16 +306,16 @@ public class DeploymentUnit {
 
     protected List<DeploymentUnitInstance> getDeploymentUnitInstances() {
         List<DeploymentUnitInstance> instances = new ArrayList<>();
-        for (Long serviceId : serviceLaunchConfigToInstance.keySet()) {
-            Map<String, DeploymentUnitInstance> maps = serviceLaunchConfigToInstance.get(serviceId);
-            instances.addAll(maps.values());
+        for (Long serviceId : svc.keySet()) {
+            DeploymentUnitService duService = svc.get(serviceId);
+            instances.addAll(duService.getInstances());
         }
         return instances;
     }
 
     protected DeploymentUnitInstance getDeploymentUnitInstance(Service service, String launchConfigName) {
-        Map<String, DeploymentUnitInstance> launchConfigToInstance = this.serviceLaunchConfigToInstance.get(service.getId());
-        return launchConfigToInstance.get(launchConfigName);
+        DeploymentUnitService duService = svc.get(service.getId());
+        return duService.getInstance(launchConfigName);
     }
 
 }
