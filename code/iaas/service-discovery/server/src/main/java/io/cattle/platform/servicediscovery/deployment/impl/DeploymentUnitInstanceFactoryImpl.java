@@ -64,7 +64,7 @@ public class DeploymentUnitInstanceFactoryImpl implements DeploymentUnitInstance
 
 
     @Override
-    public List<DeploymentUnit> collectDeploymentUnits(Service service, DeploymentServiceContext context) {
+    public List<DeploymentUnit> collectDeploymentUnits(List<Service> services, DeploymentServiceContext context) {
         /*
          * 1. find all containers related to the service through the serviceexposemaps for regular service, and
          * loadBalancerHostMap for the lb service. Then group all the objects
@@ -76,20 +76,21 @@ public class DeploymentUnitInstanceFactoryImpl implements DeploymentUnitInstance
         
         Map<String, Map<String, String>> uuidToLabels = new HashMap<>();
         Map<String, List<DeploymentUnitInstance>> uuidToInstances = new HashMap<>();
-
-        if (service.getKind().equalsIgnoreCase(KIND.SERVICE.name())) {
-            collectDefaultServiceInstances(context, uuidToLabels, uuidToInstances, service);
-        } else if (service.getKind().equalsIgnoreCase(KIND.LOADBALANCERSERVICE.name())) {
-            collectLoadBalancerServiceInstances(context, uuidToLabels, uuidToInstances, service);
-        } else if (service.getKind().equalsIgnoreCase(KIND.EXTERNALSERVICE.name())) {
-            collectExternalServiceInstances(context, uuidToLabels, uuidToInstances, service);
-        }
-
         List<DeploymentUnit> units = new ArrayList<>();
-        for (String uuid : uuidToInstances.keySet()) {
-            DeploymentUnit unit = new DeploymentUnit(context, uuid, service, uuidToInstances.get(uuid),
-                    uuidToLabels.get(uuid));
-            units.add(unit);
+
+        for (Service service : services) {
+            if (service.getKind().equalsIgnoreCase(KIND.SERVICE.name())) {
+                collectDefaultServiceInstances(context, uuidToLabels, uuidToInstances, service);
+            } else if (service.getKind().equalsIgnoreCase(KIND.LOADBALANCERSERVICE.name())) {
+                collectLoadBalancerServiceInstances(context, uuidToLabels, uuidToInstances, service);
+            } else if (service.getKind().equalsIgnoreCase(KIND.EXTERNALSERVICE.name())) {
+                collectExternalServiceInstances(context, uuidToLabels, uuidToInstances, service);
+            }
+            for (String uuid : uuidToInstances.keySet()) {
+                DeploymentUnit unit = new DeploymentUnit(context, uuid, services, uuidToInstances.get(uuid),
+                        uuidToLabels.get(uuid));
+                units.add(unit);
+            }
         }
 
         return units;

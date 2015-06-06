@@ -8,8 +8,8 @@ import io.cattle.platform.configitem.model.ItemVersion;
 import io.cattle.platform.configitem.request.ConfigUpdateRequest;
 import io.cattle.platform.configitem.version.ConfigItemStatusManager;
 import io.cattle.platform.core.constants.CommonStatesConstants;
-import io.cattle.platform.core.model.Environment;
 import io.cattle.platform.core.model.Service;
+import io.cattle.platform.engine.idempotent.IdempotentRetryException;
 import io.cattle.platform.eventing.EventService;
 import io.cattle.platform.eventing.model.EventVO;
 import io.cattle.platform.lb.instance.service.LoadBalancerInstanceManager;
@@ -18,6 +18,7 @@ import io.cattle.platform.lock.LockManager;
 import io.cattle.platform.lock.definition.LockDefinition;
 import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.process.ObjectProcessManager;
+import io.cattle.platform.object.process.StandardProcess;
 import io.cattle.platform.object.resource.ResourceMonitor;
 import io.cattle.platform.servicediscovery.api.constants.ServiceDiscoveryConstants;
 import io.cattle.platform.servicediscovery.api.dao.ServiceExposeMapDao;
@@ -29,6 +30,7 @@ import io.cattle.platform.servicediscovery.deployment.ServiceDeploymentPlannerFa
 import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +73,10 @@ public class DeploymentManagerImpl implements DeploymentManager {
         if (service == null) {
             return;
         }
+        final List<Service> services = new ArrayList<>();
+        services.add(service);
 
-        lockManager.lock(createLock(service), new LockCallbackNoReturn() {
+        lockManager.lock(createLock(services), new LockCallbackNoReturn() {
             @Override
             public void doWithLockNoResult() {
                 if (service.getState().equals(CommonStatesConstants.INACTIVE)) {
@@ -80,28 +84,30 @@ public class DeploymentManagerImpl implements DeploymentManager {
                 }
                 
                 // get existing deployment units
-                List<DeploymentUnit> units = unitInstanceFactory.collectDeploymentUnits(service,
+                List<DeploymentUnit> units = unitInstanceFactory.collectDeploymentUnits(services,
                         new DeploymentServiceContext());
-                ServiceDeploymentPlanner planner = deploymentPlannerFactory.createServiceDeploymentPlanner(service,
+                ServiceDeploymentPlanner planner = deploymentPlannerFactory.createServiceDeploymentPlanner(services,
                         units, new DeploymentServiceContext());
 
                 // don't process if there is no need to reconcile
-                boolean needToReconcile = needToReconcile(units, planner, service);
+                boolean needToReconcile = needToReconcile(services, units, planner);
 
                 if (!needToReconcile) {
                     return;
                 }
 
-                activateDeploymentUnits(service, units, planner);
+                activateServices(service, services);
+                activateDeploymentUnits(services, units, planner);
             }
         });
     }
 
-    private boolean needToReconcile(final List<DeploymentUnit> units, final ServiceDeploymentPlanner planner,
-            Service service) {
-        if (!(service.getState().equals(CommonStatesConstants.ACTIVE) || service.getState().equals(
-                CommonStatesConstants.UPDATING_ACTIVE) || service.getState().equals(CommonStatesConstants.ACTIVATING))) {
-            return false;
+    private boolean needToReconcile(final List<Service> services, final List<DeploymentUnit> units,
+            final ServiceDeploymentPlanner planner) {
+        for (Service service : services) {
+            if (service.getState().equals(CommonStatesConstants.INACTIVE)) {
+                return true;
+            }
         }
 
         boolean needToReconcile = false;
@@ -130,11 +136,34 @@ public class DeploymentManagerImpl implements DeploymentManager {
         return needToReconcile;
     }
 
-    protected LockDefinition createLock(Service service) {
-        return new ServiceReconcileLock(service);
+    private void activateServices(final Service initialService, final List<Service> services) {
+        /*
+         * Trigger activate for all the services
+         */
+        try {
+            for (Service service : services) {
+                if (service.getId().equals(initialService.getId())) {
+                    continue;
+                }
+
+                if (service.getState().equalsIgnoreCase(CommonStatesConstants.INACTIVE)) {
+                    objectProcessMgr.scheduleStandardProcess(StandardProcess.ACTIVATE, service, null);
+                } else if (service.getState().equalsIgnoreCase(CommonStatesConstants.ACTIVE)) {
+                    objectProcessMgr.scheduleStandardProcess(StandardProcess.UPDATE, service, null);
+                }
+            }
+        } catch (IdempotentRetryException ex) {
+            // if not caught, the process will keep on spinning forever
+            // figure out better solution
+        }
+
     }
 
-    protected void activateDeploymentUnits(Service service, List<DeploymentUnit> units,
+    protected LockDefinition createLock(List<Service> services) {
+        return new ServicesSidekickLock(services);
+    }
+
+    protected void activateDeploymentUnits(List<Service> services, List<DeploymentUnit> units,
             ServiceDeploymentPlanner planner) {
         /*
          * Delete invalid units
@@ -149,7 +178,7 @@ public class DeploymentManagerImpl implements DeploymentManager {
         /*
          * Activate all the units
          */
-        startUnits(service, units);
+        startUnits(units, services);
 
         /*
          * Delete the units that have a bad health
@@ -158,16 +187,19 @@ public class DeploymentManagerImpl implements DeploymentManager {
         cleanupUnhealthyUnits(units);
     }
 
-    private Map<String, DeploymentUnitInstanceIdGenerator> populateUsedNames(
-            Service service) {
-        Map<String, DeploymentUnitInstanceIdGenerator> generator = new HashMap<>();
-        for (String launchConfigName : sdSvc.getServiceLaunchConfigNames(service)) {
-            List<Integer> usedNames = sdSvc.getServiceInstanceUsedOrderIds(service, launchConfigName);
-            generator.put(launchConfigName,
-                    new DeploymentUnitInstanceIdGeneratorImpl(objectMgr.loadResource(
-                            Environment.class, service.getEnvironmentId()), usedNames, launchConfigName));
-        }
+    private Map<Long, DeploymentUnitInstanceIdGenerator> populateUsedNames(
+            List<Service> services) {
+        Map<Long, DeploymentUnitInstanceIdGenerator> generator = new HashMap<>();
+        for (Service service : services) {
+            Map<String, List<Integer>> launchConfigUsedIds = new HashMap<>();
+            for (String launchConfigName : sdSvc.getServiceLaunchConfigNames(service)) {
+                List<Integer> usedIds = sdSvc.getServiceInstanceUsedOrderIds(service, launchConfigName);
+                launchConfigUsedIds.put(launchConfigName, usedIds);
 
+            }
+            generator.put(service.getId(),
+                    new DeploymentUnitInstanceIdGeneratorImpl(launchConfigUsedIds));
+        }
         return generator;
     }
 
@@ -179,8 +211,8 @@ public class DeploymentManagerImpl implements DeploymentManager {
         }
     }
 
-    protected void startUnits(Service service, List<DeploymentUnit> units) {
-        Map<String, DeploymentUnitInstanceIdGenerator> svcInstanceIdGenerator = populateUsedNames(service);
+    protected void startUnits(List<DeploymentUnit> units, List<Service> services) {
+        Map<Long, DeploymentUnitInstanceIdGenerator> svcInstanceIdGenerator = populateUsedNames(services);
         for (DeploymentUnit unit : units) {
             unit.start(svcInstanceIdGenerator);
         }
@@ -208,12 +240,12 @@ public class DeploymentManagerImpl implements DeploymentManager {
     @Override
     public void deactivate(final Service service) {
         // do with lock to prevent intervention to sidekick service activate
-        lockManager.lock(createLock(service), new LockCallbackNoReturn() {
+        lockManager.lock(createLock(Arrays.asList(service)), new LockCallbackNoReturn() {
             @Override
             public void doWithLockNoResult() {
                 // in deactivate, we don't care about the sidekicks, and deactivate only requested service
                 List<DeploymentUnit> units = unitInstanceFactory.collectDeploymentUnits(
-                        service, new DeploymentServiceContext());
+                        Arrays.asList(service), new DeploymentServiceContext());
                 for (DeploymentUnit unit : units) {
                     unit.stop();
                 }
@@ -224,12 +256,12 @@ public class DeploymentManagerImpl implements DeploymentManager {
     @Override
     public void remove(final Service service) {
         // do with lock to prevent intervention to sidekick service activate
-        lockManager.lock(createLock(service), new LockCallbackNoReturn() {
+        lockManager.lock(createLock(Arrays.asList(service)), new LockCallbackNoReturn() {
             @Override
             public void doWithLockNoResult() {
                 // in remove, we don't care about the sidekicks, and remove only requested service
                 List<DeploymentUnit> units = unitInstanceFactory.collectDeploymentUnits(
-                        service, new DeploymentServiceContext());
+                        Arrays.asList(service), new DeploymentServiceContext());
                 for (DeploymentUnit unit : units) {
                     unit.remove();
                 }

@@ -15,14 +15,16 @@ public class GlobalServiceDeploymentPlanner extends ServiceDeploymentPlanner {
     List<Long> hostIds = new ArrayList<>();
     Map<Long, DeploymentUnit> hostToUnits = new HashMap<>();
 
-    public GlobalServiceDeploymentPlanner(Service service, List<DeploymentUnit> units, DeploymentServiceContext context) {
-        super(service, units, context);
+    public GlobalServiceDeploymentPlanner(List<Service> services, List<DeploymentUnit> units,
+            DeploymentServiceContext context) {
+        super(services, units, context);
         // TODO: Do we really need to iterate or is there just one service that we're dealing with here?
-        List<Long> hostIdsToDeployService =
-                context.allocatorService.getHostsSatisfyingHostAffinity(service.getAccountId(),
-                        context.sdService.getServiceLabels(service));
-        hostIds.addAll(hostIdsToDeployService);
-
+        for (Service service : services) {
+            List<Long> hostIdsToDeployService =
+                    context.allocatorService.getHostsSatisfyingHostAffinity(service.getAccountId(),
+                            context.sdService.getServiceLabels(service));
+            hostIds.addAll(hostIdsToDeployService);
+        }
         for (DeploymentUnit unit : units) {
             Map<String, String> unitLabels = unit.getLabels();
             String hostId = unitLabels.get(ServiceDiscoveryConstants.LABEL_SERVICE_REQUESTED_HOST_ID);
@@ -46,7 +48,7 @@ public class GlobalServiceDeploymentPlanner extends ServiceDeploymentPlanner {
             if (!hostToUnits.containsKey(hostId)) {
                 Map<String, String> labels = new HashMap<>();
                 labels.put(ServiceDiscoveryConstants.LABEL_SERVICE_REQUESTED_HOST_ID, hostId.toString());
-                DeploymentUnit unit = new DeploymentUnit(context, service, labels);
+                DeploymentUnit unit = new DeploymentUnit(context, services, labels);
                 hostToUnits.put(hostId, unit);
                 healthyUnits.add(unit);
             }

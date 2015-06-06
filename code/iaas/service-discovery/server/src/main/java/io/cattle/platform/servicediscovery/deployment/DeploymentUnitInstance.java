@@ -61,4 +61,8 @@ public abstract class DeploymentUnitInstance {
     public String getLaunchConfigName() {
         return launchConfigName;
     }
+
+    public Service getService() {
+        return service;
+    }
 }

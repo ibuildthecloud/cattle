@@ -1,32 +1,32 @@
 package io.cattle.platform.servicediscovery.deployment.impl;
 
-import io.cattle.platform.core.model.Environment;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitInstanceIdGenerator;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DeploymentUnitInstanceIdGeneratorImpl implements DeploymentUnitInstanceIdGenerator {
-    String launchConfigName;
-    Environment env;
-    List<Integer> usedIds;
+    Map<String, List<Integer>> launchConfigUsedIds = new HashMap<>();
     
-    public DeploymentUnitInstanceIdGeneratorImpl(Environment env, List<Integer> usedIds, String launchConfigName) {
-        this.env = env;
-        this.usedIds = usedIds;
-        this.launchConfigName = launchConfigName;
+    public DeploymentUnitInstanceIdGeneratorImpl(Map<String, List<Integer>> launchConfigUsedIds) {
+        this.launchConfigUsedIds = launchConfigUsedIds;
     }
     
     @Override
-    public synchronized Integer getNextAvailableId() {
-        Collections.sort(this.usedIds);
-        Integer newId = getNewId();
+    public synchronized Integer getNextAvailableId(String launchConfigName) {
+        List<Integer> usedIds = launchConfigUsedIds.get(launchConfigName);
+        Collections.sort(usedIds);
+        Integer newId = getNewId(launchConfigName);
         usedIds.add(newId);
-        Collections.sort(this.usedIds);
+        Collections.sort(usedIds);
+        launchConfigUsedIds.put(launchConfigName, usedIds);
         return newId;
     }
 
-    protected Integer getNewId() {
+    protected Integer getNewId(String launchConfigName) {
+        List<Integer> usedIds = launchConfigUsedIds.get(launchConfigName);
         Integer idToReturn = null;
         if (usedIds.size() == 0) {
             idToReturn = 1;

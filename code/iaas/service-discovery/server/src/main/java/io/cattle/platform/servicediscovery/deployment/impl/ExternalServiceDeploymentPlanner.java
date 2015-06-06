@@ -8,9 +8,9 @@ import java.util.List;
 
 public class ExternalServiceDeploymentPlanner extends ServiceDeploymentPlanner {
 
-    public ExternalServiceDeploymentPlanner(Service service, List<DeploymentUnit> units,
+    public ExternalServiceDeploymentPlanner(List<Service> services, List<DeploymentUnit> units,
             DeploymentServiceContext context) {
-        super(service, units, context);
+        super(services, units, context);
     }
 
     @Override

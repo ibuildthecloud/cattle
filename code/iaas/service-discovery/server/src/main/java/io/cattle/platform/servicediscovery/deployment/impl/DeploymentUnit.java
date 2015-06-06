@@ -22,11 +22,11 @@ import java.util.UUID;
 public class DeploymentUnit {
 
     String uuid;
-    Map<String, DeploymentUnitInstance> launchConfigToInstance = new HashMap<>();
-    List<String> launchConfigNames = new ArrayList<>();
+    Map<Long, Map<String, DeploymentUnitInstance>> serviceLaunchConfigToInstance = new HashMap<>();
+    Map<Long, List<String>> serviceLaunchConfigNames = new HashMap<>();
     DeploymentServiceContext context;
     Map<String, String> unitLabels = new HashMap<>();
-    Service service;
+    Map<Long, Service> services = new HashMap<>();
 
     private static List<String> supportedUnitLabels = Arrays
             .asList(ServiceDiscoveryConstants.LABEL_SERVICE_REQUESTED_HOST_ID);
@@ -38,26 +38,37 @@ public class DeploymentUnit {
      * This constructor is called to add existing unit
      */
     public DeploymentUnit(DeploymentServiceContext context, String uuid,
-            Service service, List<DeploymentUnitInstance> deploymentUnitInstances, Map<String, String> labels) {
-        this(context, uuid, service);
+            List<Service> services, List<DeploymentUnitInstance> deploymentUnitInstances, Map<String, String> labels) {
+        this(context, uuid, services);
         for (DeploymentUnitInstance instance : deploymentUnitInstances) {
+            Service service = instance.getService();
+            Map<String, DeploymentUnitInstance> launchConfigToInstance = new HashMap<>();
+            if (serviceLaunchConfigToInstance.get(service.getId()) != null) {
+                launchConfigToInstance = serviceLaunchConfigToInstance.get(service.getId());
+            }
             launchConfigToInstance.put(instance.getLaunchConfigName(), instance);
+            serviceLaunchConfigToInstance.put(service.getId(), launchConfigToInstance);
         }
         setLabels(labels);
     }
 
-    protected DeploymentUnit(DeploymentServiceContext context, String uuid, Service service) {
+    protected DeploymentUnit(DeploymentServiceContext context, String uuid, List<Service> services) {
         this.context = context;
         this.uuid = uuid;
-        this.service = service;
-        this.launchConfigNames.addAll(this.context.sdService.getServiceLaunchConfigNames(service));
+        for (Service service : services) {
+            this.services.put(service.getId(), service);
+        }
+        for (Service service : services) {
+            this.serviceLaunchConfigNames.put(service.getId(),
+                    this.context.sdService.getServiceLaunchConfigNames(service));
+        }
     }
     
     /*
      * this constructor is called to create a new unit
      */
-    public DeploymentUnit(DeploymentServiceContext context, Service service, Map<String, String> labels) {
-        this(context, UUID.randomUUID().toString(), service);
+    public DeploymentUnit(DeploymentServiceContext context, List<Service> services, Map<String, String> labels) {
+        this(context, UUID.randomUUID().toString(), services);
         setLabels(labels);
     }
 
@@ -71,27 +82,37 @@ public class DeploymentUnit {
         }
     }
 
-    private void createMissingUnitInstances(Map<String, DeploymentUnitInstanceIdGenerator> svcInstanceIdGenerator) {
+    private void createMissingUnitInstances(Map<Long, DeploymentUnitInstanceIdGenerator> svcInstanceIdGenerator) {
         Integer order = null;
-        for (String launchConfigName : launchConfigNames) {
-            if (!launchConfigToInstance.containsKey(launchConfigName)) {
-                if (order == null) {
-                    order = svcInstanceIdGenerator.get(launchConfigName).getNextAvailableId();
-                }
-                String instanceName = context.sdService.generateServiceInstanceName(service,
-                        launchConfigName, order);
-                DeploymentUnitInstance deploymentUnitInstance = context.deploymentUnitInstanceFactory
-                        .createDeploymentUnitInstance(context, uuid, service, instanceName, null, null, launchConfigName);
-                launchConfigToInstance.put(launchConfigName, deploymentUnitInstance);
+        for (Long serviceId : serviceLaunchConfigNames.keySet()) {
+            Service service = services.get(serviceId);
+            Map<String, DeploymentUnitInstance> launchConfigInstances = serviceLaunchConfigToInstance.get(serviceId);
+            if (launchConfigInstances == null) {
+                launchConfigInstances = new HashMap<>();
             }
+            for (String launchConfigName : serviceLaunchConfigNames.get(serviceId)) {
+                if (!launchConfigInstances.containsKey(launchConfigName)) {
+                    if (order == null) {
+                        order = svcInstanceIdGenerator.get(serviceId).getNextAvailableId(launchConfigName);
+                    }
+                    String instanceName = context.sdService.generateServiceInstanceName(service,
+                            launchConfigName, order);
+                    DeploymentUnitInstance deploymentUnitInstance = context.deploymentUnitInstanceFactory
+                            .createDeploymentUnitInstance(context, uuid, service, instanceName, null, null,
+                                    launchConfigName);
+                    launchConfigInstances.put(launchConfigName, deploymentUnitInstance);
+                }
+            }
+            serviceLaunchConfigToInstance.put(serviceId, launchConfigInstances);
         }
+
     }
 
     public boolean isError() {
         /*
          * This should check for instances with an error transitioning state
          */
-        for (DeploymentUnitInstance instance : launchConfigToInstance.values()) {
+        for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             if (instance.isError()) {
                 return true;
             }
@@ -103,7 +124,7 @@ public class DeploymentUnit {
         /*
          * Delete all instances. This should be non-blocking (don't wait)
          */
-        for (DeploymentUnitInstance instance : launchConfigToInstance.values()) {
+        for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             instance.remove();
         }
     }
@@ -112,12 +133,12 @@ public class DeploymentUnit {
         /*
          * stops all instances. This should be non-blocking (don't wait)
          */
-        for (DeploymentUnitInstance instance : launchConfigToInstance.values()) {
+        for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             instance.stop();
         }
     }
 
-    public void start(Map<String, DeploymentUnitInstanceIdGenerator> svcInstanceIdGenerator) {
+    public void start(Map<Long, DeploymentUnitInstanceIdGenerator> svcInstanceIdGenerator) {
         /*
          * Start the instances in the correct order depending on the volumes from.
          * Attempt to start things in parallel, but if not possible (like volumes-from) then start each service
@@ -130,35 +151,39 @@ public class DeploymentUnit {
          */
         createMissingUnitInstances(svcInstanceIdGenerator);
 
-        for (String launchConfigName : launchConfigToInstance.keySet()) {
-            createInstance(launchConfigName);
+        for (Long serviceId : serviceLaunchConfigNames.keySet()) {
+            List<String> launchConfigNames = serviceLaunchConfigNames.get(serviceId);
+            for (String launchConfigName : launchConfigNames) {
+                createInstance(launchConfigName, services.get(serviceId));
+            }
         }
     }
     
     public void waitForStart(){
-        for (DeploymentUnitInstance instance : launchConfigToInstance.values()) {
+        for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             instance.waitForStart();
         }
     }
 
-    protected DeploymentUnitInstance createInstance(String launchConfigName) {
-        List<Integer> volumesFromInstanceIds = getVolumesFromInstancesIds(launchConfigName);
-        Integer networkContainerId = getNetworkContainerId(launchConfigName);
+    protected DeploymentUnitInstance createInstance(String launchConfigName, Service service) {
+        List<Integer> volumesFromInstanceIds = getVolumesFromInstancesIds(service, launchConfigName);
+        Integer networkContainerId = getNetworkContainerId(launchConfigName, service);
         
-        this.launchConfigToInstance.get(launchConfigName)
+        getDeploymentUnitInstance(service, launchConfigName)
                 .start(
-                        populateDeployParams(this.launchConfigToInstance.get(launchConfigName), volumesFromInstanceIds,
+                        populateDeployParams(getDeploymentUnitInstance(service, launchConfigName),
+                                volumesFromInstanceIds,
                                 networkContainerId));
 
-        return this.launchConfigToInstance.get(launchConfigName);
+        return getDeploymentUnitInstance(service, launchConfigName);
     }
 
     @SuppressWarnings("unchecked")
-    protected List<Integer> getVolumesFromInstancesIds(String launchConfigName) {
+    protected List<Integer> getVolumesFromInstancesIds(Service service, String launchConfigName) {
         List<Integer> volumesFromInstanceIds = new ArrayList<>();
-        Object volumesFromLaunchConfigs = context.sdService.getLaunchConfigObject(this.service, launchConfigName,
+        Object volumesFromLaunchConfigs = context.sdService.getLaunchConfigObject(service, launchConfigName,
                 ServiceDiscoveryConstants.FIELD_DATA_VOLUMES_LAUNCH_CONFIG);
-        Object volumesFromInstance = context.sdService.getLaunchConfigObject(this.service, launchConfigName,
+        Object volumesFromInstance = context.sdService.getLaunchConfigObject(service, launchConfigName,
                 DockerInstanceConstants.FIELD_VOLUMES_FROM);
         if (volumesFromInstance != null) {
             volumesFromInstanceIds.addAll((List<Integer>) volumesFromInstance);
@@ -170,11 +195,12 @@ public class DeploymentUnit {
                 if (volumesFromLaunchConfig.toString().equalsIgnoreCase(service.getName())) {
                     volumesFromLaunchConfig = ServiceDiscoveryConstants.PRIMARY_LAUNCH_CONFIG_NAME;
                 }
-                DeploymentUnitInstance volumesFromUnitInstance = launchConfigToInstance.get(volumesFromLaunchConfig);
+                DeploymentUnitInstance volumesFromUnitInstance = getDeploymentUnitInstance(service,
+                        volumesFromLaunchConfig.toString());
                 if (volumesFromUnitInstance != null && volumesFromUnitInstance instanceof InstanceUnit) {
                     if (((InstanceUnit) volumesFromUnitInstance).getInstance() == null) {
                         // request new instance creation
-                        volumesFromUnitInstance = createInstance(volumesFromUnitInstance.getLaunchConfigName());
+                        volumesFromUnitInstance = createInstance(volumesFromUnitInstance.getLaunchConfigName(), service);
                     }
                     // wait for start
                     volumesFromUnitInstance.start(new HashMap<String, Object>());
@@ -188,16 +214,16 @@ public class DeploymentUnit {
         return volumesFromInstanceIds;
     }
 
-    protected Integer getNetworkContainerId(String launchConfigName) {
+    protected Integer getNetworkContainerId(String launchConfigName, Service service) {
         Integer networkContainerId = null;
 
-        Object networkFromInstance = context.sdService.getLaunchConfigObject(this.service, launchConfigName,
+        Object networkFromInstance = context.sdService.getLaunchConfigObject(service, launchConfigName,
                 DockerInstanceConstants.FIELD_NETWORK_CONTAINER_ID);
         if (networkFromInstance != null) {
             return (Integer) networkFromInstance;
         }
 
-        Object networkFromLaunchConfig = context.sdService.getLaunchConfigObject(this.service, launchConfigName,
+        Object networkFromLaunchConfig = context.sdService.getLaunchConfigObject(service, launchConfigName,
                 ServiceDiscoveryConstants.FIELD_NETWORK_LAUNCH_CONFIG);
 
         if (networkFromLaunchConfig != null) {
@@ -205,11 +231,13 @@ public class DeploymentUnit {
             if (networkFromLaunchConfig.toString().equalsIgnoreCase(service.getName())) {
                 networkFromLaunchConfig = ServiceDiscoveryConstants.PRIMARY_LAUNCH_CONFIG_NAME;
             }
-            DeploymentUnitInstance networkFromUnitInstance = launchConfigToInstance.get(networkFromLaunchConfig);
+            DeploymentUnitInstance networkFromUnitInstance = getDeploymentUnitInstance(service,
+                    networkFromLaunchConfig.toString());
+
             if (networkFromUnitInstance != null && networkFromUnitInstance instanceof InstanceUnit) {
                 if (((InstanceUnit) networkFromUnitInstance).getInstance() == null) {
                     // request new instance creation
-                    networkFromUnitInstance = createInstance(networkFromUnitInstance.getLaunchConfigName());
+                    networkFromUnitInstance = createInstance(networkFromUnitInstance.getLaunchConfigName(), service);
                 }
                 // wait for start
                 networkFromUnitInstance.start(new HashMap<String, Object>());
@@ -222,7 +250,7 @@ public class DeploymentUnit {
     }
 
     public boolean isStarted() {
-        for (DeploymentUnitInstance instance : launchConfigToInstance.values()) {
+        for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             if (!instance.isStarted()) {
                 return false;
             }
@@ -232,7 +260,7 @@ public class DeploymentUnit {
 
     public boolean isUnhealthy() {
         // returns list of instances that need cleanup (having bad health)
-        for (DeploymentUnitInstance instance : launchConfigToInstance.values()) {
+        for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             if (instance.isUnhealthy()) {
                 return true;
             }
@@ -241,7 +269,12 @@ public class DeploymentUnit {
     }
 
     public boolean isComplete() {
-        return launchConfigToInstance.size() == launchConfigNames.size();
+        for (Long serviceId : services.keySet()) {
+            if (serviceLaunchConfigToInstance.get(serviceId).size() != serviceLaunchConfigNames.get(serviceId).size()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected Map<String, Object> populateDeployParams(DeploymentUnitInstance instance,
@@ -265,9 +298,10 @@ public class DeploymentUnit {
 
     protected Map<String, String> getLabels(DeploymentUnitInstance instance) {
         Map<String, String> labels = new HashMap<>();
-        labels.put(ServiceDiscoveryConstants.LABEL_SERVICE_NAME, service.getName());
+        labels.put(ServiceDiscoveryConstants.LABEL_SERVICE_NAME, instance.getService().getName());
         labels.put(ServiceDiscoveryConstants.LABEL_ENVIRONMENT_NAME,
-                context.objectManager.loadResource(Environment.class, service.getEnvironmentId()).getName());
+                context.objectManager.loadResource(Environment.class, instance.getService().getEnvironmentId())
+                        .getName());
         /*
          * Put label 'io.rancher.deployment.unit=this.uuid' on each one. This way
          * we can reference a set of containers later.
@@ -296,6 +330,20 @@ public class DeploymentUnit {
 
     public String getUuid() {
         return uuid;
+    }
+
+    protected List<DeploymentUnitInstance> getDeploymentUnitInstances() {
+        List<DeploymentUnitInstance> instances = new ArrayList<>();
+        for (Long serviceId : serviceLaunchConfigToInstance.keySet()) {
+            Map<String, DeploymentUnitInstance> maps = serviceLaunchConfigToInstance.get(serviceId);
+            instances.addAll(maps.values());
+        }
+        return instances;
+    }
+
+    protected DeploymentUnitInstance getDeploymentUnitInstance(Service service, String launchConfigName) {
+        Map<String, DeploymentUnitInstance> launchConfigToInstance = this.serviceLaunchConfigToInstance.get(service.getId());
+        return launchConfigToInstance.get(launchConfigName);
     }
 
 }

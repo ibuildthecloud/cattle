@@ -356,11 +356,7 @@ public class ServiceDiscoveryServiceImpl implements ServiceDiscoveryService {
         List<String> launchConfigNames = new ArrayList<>();
 
         // put the primary config in
-        Object launchConfig = originalData
-                .get(ServiceDiscoveryConstants.FIELD_LAUNCH_CONFIG);
-        if (launchConfig != null) {
-            launchConfigNames.add(ServiceDiscoveryConstants.PRIMARY_LAUNCH_CONFIG_NAME);
-        }
+        launchConfigNames.add(ServiceDiscoveryConstants.PRIMARY_LAUNCH_CONFIG_NAME);
 
         // put the secondary configs in
         Object secondaryLaunchConfigs = originalData

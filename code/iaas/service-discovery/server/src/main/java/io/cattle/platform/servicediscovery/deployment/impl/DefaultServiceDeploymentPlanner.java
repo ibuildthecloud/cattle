@@ -12,11 +12,16 @@ public class DefaultServiceDeploymentPlanner extends ServiceDeploymentPlanner {
 
     protected Integer requestedScale = 0;
 
-    public DefaultServiceDeploymentPlanner(Service service, List<DeploymentUnit> units,
+    public DefaultServiceDeploymentPlanner(List<Service> services, List<DeploymentUnit> units,
             DeploymentServiceContext context) {
-        super(service, units, context);
-        this.requestedScale = DataAccessor.fieldInteger(service,
-                ServiceDiscoveryConstants.FIELD_SCALE);
+        super(services, units, context);
+        for (Service service : services) {
+            int scale = DataAccessor.fieldInteger(service,
+                    ServiceDiscoveryConstants.FIELD_SCALE);
+            if (scale > this.requestedScale) {
+                this.requestedScale = scale;
+            }
+        }
     }
 
     @Override
@@ -32,7 +37,7 @@ public class DefaultServiceDeploymentPlanner extends ServiceDeploymentPlanner {
 
     private void addMissingUnits() {
         while (this.healthyUnits.size() < this.requestedScale) {
-            DeploymentUnit unit = new DeploymentUnit(context, service, null);
+            DeploymentUnit unit = new DeploymentUnit(context, services, null);
             this.healthyUnits.add(unit);
         }
     }
