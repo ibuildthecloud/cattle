@@ -105,12 +105,12 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
         for (String myRef : myRefs) {
             if (!launchConfigRefs.containsKey(myRef)) {
                 ValidationErrorCodes.throwValidationError(ValidationErrorCodes.INVALID_REFERENCE,
-                        "name");
+                        "LaunchConfigName");
             }
 
             if (alreadySeenReferences.contains(myRef)) {
                 ValidationErrorCodes.throwValidationError(ValidationErrorCodes.INVALID_REFERENCE,
-                        "name");
+                        "CircularReference");
             }
 
             if (!launchConfigRefs.get(myRef).isEmpty()) {
