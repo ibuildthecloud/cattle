@@ -7,6 +7,10 @@ swarm:
 
 swarm-agent:
   image: rancher/swarm-agent:dev
+  environment:
+    DOCKER_HOST: tcp://docker:2375
+  links:
+  - swarm:docker
   labels:
     io.rancher.container.agent_service.docker_compose: 'true'
     io.rancher.container.create_agent: 'true'
