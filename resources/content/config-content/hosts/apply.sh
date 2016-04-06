@@ -2,23 +2,6 @@
 
 . ${CATTLE_HOME:-/var/lib/cattle}/common/scripts.sh
 
-reload_service()
-{
-    local service=$1
-    if [ ! -e /etc/init.d/rancher-${service} ]; then
-        # rancher-${service} is not yet installed
-        return
-    fi
-
-    PID=$(pidof rancher-${service} || true)
-
-    if [ -z "$PID" ]; then
-        /etc/init.d/rancher-${service} start
-    else
-        kill -HUP $PID
-    fi
-}
-
 DNS=
 
 for address in $(cat /etc/resolv.conf  | sed 's/^# nameserver/nameserver/' | grep ^nameserver | awk '{print $2}'); do
