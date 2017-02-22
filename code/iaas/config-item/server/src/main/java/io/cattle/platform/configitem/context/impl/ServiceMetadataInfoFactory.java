@@ -87,9 +87,15 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
             return;
         }
 
+        String itemVersion = null;
+        try {
+            itemVersion = version.call();
+        } catch (Exception e) {
+            ExceptionUtils.rethrowExpectedRuntime(e);
+        }
+
         ReentrantLock lock = doLock(instance);
         try {
-            String itemVersion = version.call();
             Map<Long, HostMetaData> hostIdToHostMetadata;
             if (CACHE.get()) {
                 hostIdToHostMetadata = writeCachedGenericData(instance, itemVersion, os);
