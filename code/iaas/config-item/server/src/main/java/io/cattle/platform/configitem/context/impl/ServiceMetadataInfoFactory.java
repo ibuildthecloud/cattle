@@ -86,7 +86,6 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
             return;
         }
 
-        ReentrantLock lock = doLock(instance);
         try {
             String itemVersion = version.call();
             Map<Long, HostMetaData> hostIdToHostMetadata;
@@ -102,9 +101,6 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
         } catch (Exception e) {
             ExceptionUtils.rethrowExpectedRuntime(e);
         } finally {
-            if (lock != null) {
-                lock.unlock();
-            }
             try {
                 os.close();
             } catch (IOException e) {
