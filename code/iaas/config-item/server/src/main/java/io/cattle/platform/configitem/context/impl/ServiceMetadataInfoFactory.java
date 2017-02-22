@@ -50,6 +50,7 @@ import com.netflix.config.DynamicBooleanProperty;
 public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory {
 
     private static DynamicBooleanProperty CACHE = ArchaiusUtil.getBoolean("cache.metadata");
+    private static DynamicBooleanProperty CACHE_LOCK = ArchaiusUtil.getBoolean("cache.metadata.lock");
 
     @Inject
     ServiceConsumeMapDao consumeMapDao;
@@ -86,6 +87,7 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
             return;
         }
 
+        ReentrantLock lock = doLock(instance);
         try {
             String itemVersion = version.call();
             Map<Long, HostMetaData> hostIdToHostMetadata;
@@ -101,6 +103,9 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
         } catch (Exception e) {
             ExceptionUtils.rethrowExpectedRuntime(e);
         } finally {
+            if (lock != null) {
+                lock.unlock();
+            }
             try {
                 os.close();
             } catch (IOException e) {
@@ -110,7 +115,7 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
     }
 
     protected ReentrantLock doLock(final Instance instance) {
-        if (!CACHE.get()) {
+        if (!CACHE.get() || !CACHE_LOCK.get()) {
             return null;
         }
         ReentrantLock lock = lockCache.getUnchecked(instance.getAccountId());
