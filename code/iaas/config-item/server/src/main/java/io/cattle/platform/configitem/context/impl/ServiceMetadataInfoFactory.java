@@ -59,7 +59,7 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
     MetaDataInfoDao metaDataInfoDao;
 
     Cache<String, CacheData> cache = CacheBuilder.newBuilder()
-        .expireAfterWrite(30, TimeUnit.SECONDS)
+        .expireAfterWrite(1, TimeUnit.MINUTES)
         .build();
 
     LoadingCache<Long, ReentrantLock> lockCache = CacheBuilder.newBuilder()
@@ -87,15 +87,9 @@ public class ServiceMetadataInfoFactory extends AbstractAgentBaseContextFactory 
             return;
         }
 
-        String itemVersion = null;
-        try {
-            itemVersion = version.call();
-        } catch (Exception e) {
-            ExceptionUtils.rethrowExpectedRuntime(e);
-        }
-
         ReentrantLock lock = doLock(instance);
         try {
+            String itemVersion = version.call();
             Map<Long, HostMetaData> hostIdToHostMetadata;
             if (CACHE.get()) {
                 hostIdToHostMetadata = writeCachedGenericData(instance, itemVersion, os);
