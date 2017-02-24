@@ -221,6 +221,8 @@ def test_user_types(user_client, adds=set(), removes=set()):
         'defaultNetwork',
         'scheduledUpgrade',
         'genericObject',
+        'instanceRevision',
+        'serviceRollback',
     }
     types.update(adds)
     types.difference_update(removes)
@@ -469,7 +471,9 @@ def test_admin_types(admin_user_client, adds=set(), removes=set()):
         'genericObject',
         'processPool',
         'processSummary',
-        'scheduledUpgrade'
+        'scheduledUpgrade',
+        'instanceRevision',
+        'serviceRollback',
     }
     types.update(adds)
     types.difference_update(removes)
@@ -2140,6 +2144,11 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'linkedServices': 'r',
         'system': 'r',
         'lbConfig': 'r',
+        'batchSize': 'r',
+        'intervalMillis': 'r',
+        'startFirst': 'r',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
     auth_check(user_client.schema, 'service', 'r', {
@@ -2168,17 +2177,22 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'linkedServices': 'r',
         'system': 'r',
         'lbConfig': 'r',
+        'batchSize': 'r',
+        'intervalMillis': 'r',
+        'startFirst': 'r',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
     auth_check(project_client.schema, 'service', 'crud', {
-        'name': 'cru',
+        'name': 'cr',
         'externalId': 'cr',
         'stackId': 'cr',
         'scale': 'cru',
-        'launchConfig': 'cr',
+        'launchConfig': 'cru',
         'accountId': 'r',
         'upgrade': 'r',
-        'secondaryLaunchConfigs': 'cr',
+        'secondaryLaunchConfigs': 'cru',
         'vip': 'cr',
         'createIndex': 'r',
         'metadata': 'cru',
@@ -2196,16 +2210,21 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'linkedServices': 'r',
         'system': 'r',
         'lbConfig': 'cru',
+        'batchSize': 'cru',
+        'intervalMillis': 'cru',
+        'startFirst': 'cru',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
     resource_action_check(user_client.schema, 'service', [
         'activate',
         'addservicelink',
+        'pause',
         'cancelupgrade',
         'create',
         'deactivate',
         'finishupgrade',
-        'continueupgrade',
         'remove',
         'removeservicelink',
         'restart',
@@ -2213,16 +2232,17 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'setservicelinks',
         'update',
         'upgrade',
+        'garbagecollect',
     ])
 
     resource_action_check(admin_user_client.schema, 'service', [
         'activate',
         'addservicelink',
+        'pause',
         'cancelupgrade',
         'create',
         'deactivate',
         'finishupgrade',
-        'continueupgrade',
         'remove',
         'removeservicelink',
         'restart',
@@ -2230,13 +2250,14 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'setservicelinks',
         'update',
         'upgrade',
+        'garbagecollect',
     ])
 
     resource_action_check(project_client.schema, 'service', [
         'activate',
         'addservicelink',
+        'pause',
         'cancelupgrade',
-        'continueupgrade',
         'create',
         'deactivate',
         'finishupgrade',
@@ -2247,17 +2268,18 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'setservicelinks',
         'update',
         'upgrade',
+        'garbagecollect',
     ])
 
     resource_action_check(project_admin_client.schema, 'service', [
         'activate',
         'addservicelink',
+        'pause',
         'cancelupgrade',
         'certificate',
         'create',
         'deactivate',
         'finishupgrade',
-        'continueupgrade',
         'remove',
         'removeservicelink',
         'restart',
@@ -2265,6 +2287,7 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'setservicelinks',
         'update',
         'upgrade',
+        'garbagecollect',
     ])
 
 
@@ -2469,6 +2492,11 @@ def test_svc_discovery_lb_service(admin_user_client, user_client,
         'linkedServices': 'r',
         'system': 'r',
         'lbConfig': 'r',
+        'batchSize': 'r',
+        'intervalMillis': 'r',
+        'startFirst': 'r',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
     auth_check(user_client.schema, 'loadBalancerService', 'r', {
@@ -2494,10 +2522,15 @@ def test_svc_discovery_lb_service(admin_user_client, user_client,
         'linkedServices': 'r',
         'system': 'r',
         'lbConfig': 'r',
+        'batchSize': 'r',
+        'intervalMillis': 'r',
+        'startFirst': 'r',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
     auth_check(project_client.schema, 'loadBalancerService', 'crud', {
-        'name': 'cru',
+        'name': 'cr',
         'externalId': 'cr',
         'stackId': 'cr',
         'scale': 'cru',
@@ -2519,6 +2552,11 @@ def test_svc_discovery_lb_service(admin_user_client, user_client,
         'linkedServices': 'r',
         'system': 'r',
         'lbConfig': 'cru',
+        'batchSize': 'cru',
+        'intervalMillis': 'cru',
+        'startFirst': 'cru',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
 
@@ -2724,6 +2762,8 @@ def test_svc_discovery_external_service(admin_user_client, user_client,
         'instanceIds': 'r',
         'linkedServices': 'r',
         'system': 'r',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
     auth_check(user_client.schema, 'externalService', 'r', {
@@ -2743,10 +2783,12 @@ def test_svc_discovery_external_service(admin_user_client, user_client,
         'instanceIds': 'r',
         'linkedServices': 'r',
         'system': 'r',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
     auth_check(project_client.schema, 'externalService', 'crud', {
-        'name': 'cru',
+        'name': 'cr',
         'externalId': 'cr',
         'stackId': 'cr',
         'hostname': 'cru',
@@ -2755,13 +2797,15 @@ def test_svc_discovery_external_service(admin_user_client, user_client,
         'upgrade': 'r',
         'healthCheck': 'cr',
         'metadata': 'cru',
-        'launchConfig': 'cr',
+        'launchConfig': 'cru',
         'fqdn': 'r',
         'healthState': 'r',
         'startOnCreate': 'cr',
         'instanceIds': 'r',
         'linkedServices': 'r',
         'system': 'r',
+        'revisionId': 'r',
+        'previousRevisionId': 'r',
     })
 
 

@@ -131,3 +131,16 @@ def test_restart_on_failure_exceed_retry(context, super_client):
     super_client.update(c1, exitCode=1, startRetryCount=2)
     c1 = super_client.wait_success(c1.stop(stopSource="external"))
     wait_for(lambda: super_client.reload(c1).state == 'stopped')
+
+
+def test_instance_revision(client, context):
+    c = client.create_container(imageUuid=context.image_uuid)
+    c = client.wait_success(c)
+    assert c.deploymentUnitUuid is not None
+
+    rs = client.list_instanceRevision(instanceId=c.id)
+    assert len(rs) == 1
+    r = rs[0]
+    spec = r.specs[c.uuid]
+    assert spec['imageUuid'] == context.image_uuid
+    assert spec['version'] == '0'

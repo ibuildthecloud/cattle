@@ -421,6 +421,10 @@
         "startRetryCount": {
             "type": "int",
             "nullable": true
+        },
+        "deploymentUnitUuid": {
+            "type": "string",
+            "nullable": true
         }
     },
     "resourceActions": {
