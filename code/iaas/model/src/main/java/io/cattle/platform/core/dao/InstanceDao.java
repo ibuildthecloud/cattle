@@ -58,4 +58,6 @@ public interface InstanceDao {
 
     void cleanupInstanceRevisions(Instance instance);
 
+    Map<String, Object> getInstanceSpec(Instance instance);
+
 }

@@ -3,6 +3,7 @@ package io.cattle.platform.app;
 import io.cattle.platform.core.addon.BlkioDeviceOption;
 import io.cattle.platform.core.addon.CatalogTemplate;
 import io.cattle.platform.core.addon.ComposeConfig;
+import io.cattle.platform.core.addon.ConvertToServiceInput;
 import io.cattle.platform.core.addon.HaConfigInput;
 import io.cattle.platform.core.addon.HaproxyConfig;
 import io.cattle.platform.core.addon.InServiceUpgradeStrategy;
@@ -95,7 +96,8 @@ public class CoreModelConfig {
                 ProcessSummary.class,
                 ProcessPool.class,
                 SecretReference.class,
-                ServiceRollback.class
+                ServiceRollback.class,
+                ConvertToServiceInput.class
                 ));
         return typeSet;
     }

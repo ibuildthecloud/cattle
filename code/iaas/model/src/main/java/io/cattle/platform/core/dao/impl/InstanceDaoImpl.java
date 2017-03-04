@@ -53,6 +53,7 @@ import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.meta.ObjectMetaDataManager;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.object.util.DataUtils;
+import io.cattle.platform.util.type.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -489,5 +490,20 @@ public class InstanceDaoImpl extends AbstractJooqDao implements InstanceDao {
             params.put(ObjectMetaDataManager.STATE_FIELD, CommonStatesConstants.REMOVED);
             objectManager.setFields(revision, params);
         }
+    }
+
+    @Override
+    public Map<String, Object> getInstanceSpec(Instance instance) {
+        InstanceRevision revision = objectManager.findAny(InstanceRevision.class, INSTANCE_REVISION.ID,
+                instance.getRevisionId());
+        if (revision == null) {
+            return null;
+        }
+        Map<?, ?> specs = CollectionUtils.toMap(DataAccessor.field(
+                revision, InstanceConstants.FIELD_INSTANCE_SPECS, Object.class));
+        if (specs.size() != 0) {
+            return CollectionUtils.toMap(specs.get(instance.getUuid()));
+        }
+        return null;
     }
 }
