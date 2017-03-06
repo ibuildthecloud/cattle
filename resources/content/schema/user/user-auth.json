@@ -655,6 +655,7 @@
         "composeService.startFirst" : "",
         "composeService.revisionId" : "",
         "composeService.previousRevisionId": "",
+        "composeService.prePullOnUpgrade": "",
 
         "service" : "r",
         "service.name": "cr",
@@ -687,6 +688,7 @@
         "service.startFirst" : "cru",
         "service.revisionId" : "r",
         "service.previousRevisionId": "r",
+        "service.prePullOnUpgrade": "cru",
 
         "addRemoveServiceLinkInput" : "r",
         "addRemoveServiceLinkInput.serviceLink" : "cr",
@@ -834,6 +836,7 @@
         "kubernetesService.startFirst" : "",
         "kubernetesService.revisionId" : "",
         "kubernetesService.previousRevisionId" : "",
+        "kubernetesService.prePullOnUpgrade": "",
 
         "kubernetesStack" : "r",
         "kubernetesStack.name": "cr",

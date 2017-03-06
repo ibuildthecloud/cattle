@@ -177,6 +177,10 @@
              "attributes" : {
                 "scheduleUpdate" : true
             }
+        },
+        "prePullOnUpgrade": {
+            "type": "boolean",
+            "default": true
         }
     },
     "resourceActions" : {

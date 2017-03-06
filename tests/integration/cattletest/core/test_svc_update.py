@@ -195,11 +195,13 @@ def test_big_scale(context, client):
     svc = client.wait_success(svc.activate())
     svc = _run_insvc_upgrade(client, svc,
                              batchSize=1,
-                             launchConfig=launch_config)
+                             launchConfig=launch_config,
+                             prePullOnUpgrade=False)
     svc = client.wait_success(svc)
     svc = _run_insvc_upgrade(client, svc,
                              batchSize=5,
-                             launchConfig=launch_config)
+                             launchConfig=launch_config,
+                             prePullOnUpgrade=False)
     client.wait_success(svc)
 
 
@@ -237,7 +239,8 @@ def test_in_service_upgrade_networks_from(context, client, super_client):
 
     u_svc = _run_insvc_upgrade(client, svc,
                                secondaryLaunchConfigs=[secondary1],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
     _validate_upgrade(super_client, svc, u_svc,
@@ -281,7 +284,8 @@ def test_in_service_upgrade_volumes_from(context, client, super_client):
     u_svc = _run_insvc_upgrade(client, svc,
                                launchConfig=launch_config,
                                secondaryLaunchConfigs=[secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
     _validate_upgrade(super_client, svc, u_svc,
@@ -310,7 +314,8 @@ def test_dns_service_upgrade(client):
     labels = {"bar": "foo"}
     launch_config = {"labels": labels}
     dns = _run_insvc_upgrade(client, dns, batchSize=1,
-                             launchConfig=launch_config)
+                             launchConfig=launch_config,
+                             prePullOnUpgrade=False)
     dns = client.wait_success(dns)
     assert dns.launchConfig is not None
     assert dns.launchConfig.labels == labels
@@ -334,7 +339,8 @@ def test_external_service_upgrade(client):
     labels = {"bar": "foo"}
     launch_config = {"labels": labels}
     svc = _run_insvc_upgrade(client, svc, batchSize=1,
-                             launchConfig=launch_config)
+                             launchConfig=launch_config,
+                             prePullOnUpgrade=False)
     svc = client.wait_success(svc)
     assert svc.launchConfig is not None
     assert svc.launchConfig.labels == labels
@@ -352,7 +358,8 @@ def test_service_upgrade_mixed_selector(client, context):
                                  selectorContainer="foo=barbar")
     svc2 = client.wait_success(svc2)
     svc2 = client.wait_success(svc2.activate())
-    _run_insvc_upgrade(client, svc2, launchConfig=launch_config)
+    _run_insvc_upgrade(client, svc2, launchConfig=launch_config,
+                       prePullOnUpgrade=False)
 
 
 def test_rollback_sidekicks(context, client, super_client):
@@ -376,7 +383,8 @@ def test_rollback_sidekicks(context, client, super_client):
 
     u_svc = _run_insvc_upgrade(client, svc,
                                secondaryLaunchConfigs=[secondary1],
-                               batchSize=2)
+                               batchSize=2,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
 
@@ -416,7 +424,8 @@ def test_rollback_id(context, client, super_client):
     svc = _run_insvc_upgrade(client, svc, batchSize=2,
                              launchConfig=launch_config,
                              startFirst=False,
-                             intervalMillis=100)
+                             intervalMillis=100,
+                             prePullOnUpgrade=False)
 
     svc = client.wait_success(svc)
 
@@ -450,7 +459,8 @@ def test_in_service_upgrade_port_mapping(context, client, super_client):
     u_svc = _run_insvc_upgrade(client, svc, launchConfig=launch_config,
                                secondaryLaunchConfigs=[secondary1,
                                                        secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
 
@@ -484,7 +494,8 @@ def test_sidekick_addition(context, client):
     u_svc = _run_insvc_upgrade(client, svc,
                                launchConfig=launch_config,
                                secondaryLaunchConfigs=[secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
 
@@ -524,7 +535,8 @@ def test_sidekick_addition_rollback(context, client):
     u_svc = _run_insvc_upgrade(client, svc,
                                launchConfig=launch_config,
                                secondaryLaunchConfigs=[secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
     u_svc = client.wait_success(u_svc.rollback())
@@ -566,7 +578,8 @@ def test_sidekick_addition_wo_primary(context, client):
 
     u_svc = _run_insvc_upgrade(client, svc,
                                secondaryLaunchConfigs=[secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
 
@@ -600,7 +613,8 @@ def test_sidekick_addition_two_sidekicks(context, client):
 
     u_svc = _run_insvc_upgrade(client, svc,
                                secondaryLaunchConfigs=[secondary1, secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
 
@@ -635,7 +649,8 @@ def test_sidekick_removal(context, client):
                   'imageUuid': "rancher/none"}
     u_svc = _run_insvc_upgrade(client, svc,
                                secondaryLaunchConfigs=[secondary1, secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
 
@@ -672,7 +687,8 @@ def test_sidekick_removal_rollback(context, client):
                   'imageUuid': "rancher/none"}
     u_svc = _run_insvc_upgrade(client, svc,
                                secondaryLaunchConfigs=[secondary1, secondary2],
-                               batchSize=1)
+                               batchSize=1,
+                               prePullOnUpgrade=False)
     u_svc = client.wait_success(u_svc)
     assert u_svc.state == 'active'
     u_svc = wait_state(client, u_svc.rollback(), "active")
@@ -767,7 +783,8 @@ def _create_and_schedule_inservice_upgrade(client, context, startFirst=False):
     svc = _run_insvc_upgrade(client, svc, batchSize=2,
                              launchConfig=launch_config,
                              startFirst=startFirst,
-                             intervalMillis=100)
+                             intervalMillis=100,
+                             prePullOnUpgrade=False)
     return svc
 
 
@@ -997,7 +1014,8 @@ def test_rollback_to_revision(context, client, super_client):
     svc = _run_insvc_upgrade(client, svc, batchSize=2,
                              launchConfig=launch_config,
                              startFirst=False,
-                             intervalMillis=100)
+                             intervalMillis=100,
+                             prePullOnUpgrade=False)
 
     svc = client.wait_success(svc)
     r2 = svc.revisionId
@@ -1011,7 +1029,8 @@ def test_rollback_to_revision(context, client, super_client):
     svc = _run_insvc_upgrade(client, svc, batchSize=2,
                              launchConfig=launch_config,
                              startFirst=False,
-                             intervalMillis=100)
+                             intervalMillis=100,
+                             prePullOnUpgrade=False)
 
     svc = client.wait_success(svc)
     r3 = svc.revisionId

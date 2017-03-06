@@ -12,6 +12,7 @@ import io.cattle.platform.engine.process.ProcessInstance;
 import io.cattle.platform.engine.process.ProcessState;
 import io.cattle.platform.iaas.api.auditing.AuditService;
 import io.cattle.platform.object.resource.ResourceMonitor;
+import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.process.common.handler.AbstractObjectProcessHandler;
 import io.cattle.platform.servicediscovery.api.dao.ServiceExposeMapDao;
 import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
@@ -79,7 +80,8 @@ public class ServiceUpdateActivate extends AbstractObjectProcessHandler {
                     InServiceUpgradeStrategy strategy = ServiceDiscoveryUtil.getStrategy(service,
                             currentPreviousRevision, true);
                     if (service.getState().equalsIgnoreCase(CommonStatesConstants.UPDATING_ACTIVE)) {
-                        upgradeMgr.upgrade(service, strategy, service.getState(), true, true);
+                        boolean prePullImage = DataAccessor.fieldBool(service, ServiceConstants.FIELD_IMAGE_PRE_PULL);
+                        upgradeMgr.upgrade(service, strategy, service.getState(), true, prePullImage);
                     } else {
                         upgradeMgr.upgrade(service, strategy, service.getState(), false, false);
                     }

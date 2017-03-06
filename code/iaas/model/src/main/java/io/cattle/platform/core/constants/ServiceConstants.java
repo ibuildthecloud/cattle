@@ -99,6 +99,7 @@ public class ServiceConstants {
     public static final String FIELD_INTERVAL_MILLISEC = "intervalMillis";
     public static final String FIELD_START_FIRST = "startFirst";
     public static final String FIELD_UPGRADE_TIME = "upgradeTime";
+    public static final String FIELD_IMAGE_PRE_PULL = "prePullOnUpgrade";
 
     public static final String FIELD_INTERNAL_VOLUMES = "internalVolumes";
     public static final String FIELD_VOLUME_TEMPLATE_ID = "volumeTemplateId";
