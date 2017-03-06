@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.deployment.impl;
+package io.cattle.platform.servicediscovery.service.impl;
 
 import static io.cattle.platform.core.model.tables.ServiceTable.*;
 import static io.cattle.platform.core.model.tables.StackTable.*;
@@ -13,9 +13,11 @@ import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.constants.ServiceConstants;
 import io.cattle.platform.core.dao.HostDao;
 import io.cattle.platform.core.dao.ServiceDao;
+import io.cattle.platform.core.dao.ServiceExposeMapDao;
 import io.cattle.platform.core.model.Service;
 import io.cattle.platform.core.model.ServiceExposeMap;
 import io.cattle.platform.core.model.Stack;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.engine.idempotent.IdempotentRetryException;
 import io.cattle.platform.json.JsonMapper;
 import io.cattle.platform.lock.LockCallback;
@@ -27,15 +29,11 @@ import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.process.StandardProcess;
 import io.cattle.platform.object.resource.ResourceMonitor;
 import io.cattle.platform.object.util.DataAccessor;
-import io.cattle.platform.servicediscovery.api.dao.ServiceExposeMapDao;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
-import io.cattle.platform.servicediscovery.deployment.DeploymentManager;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitManager;
 import io.cattle.platform.servicediscovery.deployment.ServiceDeploymentPlanner;
 import io.cattle.platform.servicediscovery.deployment.impl.lock.ServiceLock;
-import io.cattle.platform.servicediscovery.deployment.impl.planner.DefaultServiceDeploymentPlanner;
-import io.cattle.platform.servicediscovery.deployment.impl.planner.GlobalServiceDeploymentPlanner;
-import io.cattle.platform.servicediscovery.deployment.impl.planner.NoOpServiceDeploymentPlanner;
+import io.cattle.platform.servicediscovery.deployment.impl.planner.ServiceDeploymentPlannerFactory;
+import io.cattle.platform.servicediscovery.service.DeploymentManager;
 import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
 import io.cattle.platform.servicediscovery.upgrade.UpgradeManager;
 import io.cattle.platform.util.exception.DeploymentUnitAllocateException;
@@ -104,14 +102,14 @@ public class DeploymentManagerImpl implements DeploymentManager {
      */
     protected boolean activate(final Service service, final boolean checkState, final boolean scheduleOnly) {
         // return immediately if inactive
-        if (service == null || !sdSvc.isActiveService(service)) {
+        if (service == null || !ServiceUtil.isActiveService(service)) {
             return false;
         }
 
         return lockManager.lock(checkState ? null : createLock(service), new LockCallback<Boolean>() {
             @Override
             public Boolean doWithLock() {
-                if (!sdSvc.isActiveService(service)) {
+                if (!ServiceUtil.isActiveService(service)) {
                     return false;
                 }
                 if (!hostDao.hasActiveHosts(service.getAccountId())) {
@@ -263,7 +261,6 @@ public class DeploymentManagerImpl implements DeploymentManager {
             return !planner.isHealthcheckInitiailizing();
         }
 
-
         activateService(service);
         if (scheduleOnly) {
             return false;
@@ -284,19 +281,20 @@ public class DeploymentManagerImpl implements DeploymentManager {
         return false;
     }
 
-
-
-    private ServiceDeploymentPlanner getPlanner(Service service) {
-        return createServiceDeploymentPlanner(service);
-    }
-
     private boolean needToReconcile(Service service, ServiceDeploymentPlanner planner) {
         if (service.getState().equals(CommonStatesConstants.INACTIVE)) {
             return true;
         }
 
-        return planner.needToReconcileDeployment();
+        return planner.needToReconcile();
     }
+
+    private ServiceDeploymentPlanner getPlanner(Service service) {
+        Stack stack = objectMgr.findOne(Stack.class, STACK.ID, service.getStackId());
+        return ServiceDeploymentPlannerFactory.getServiceDeploymentPlanner(service, stack,
+                new DeploymentManagerContext());
+    }
+
 
     private void activateService(final Service service) {
         try {
@@ -381,7 +379,7 @@ public class DeploymentManagerImpl implements DeploymentManager {
             @Override
             public void run() {
                 final Service service = objectMgr.loadResource(Service.class, client.getResourceId());
-                if (sdSvc.isServiceValidForReconcile(service)) {
+                if (ServiceUtil.isServiceValidForReconcile(service)) {
                     activitySvc.run(service, "service.trigger", "Re-evaluating state", new Runnable() {
                         @Override
                         public void run() {
@@ -393,43 +391,7 @@ public class DeploymentManagerImpl implements DeploymentManager {
         });
     }
 
-    public ServiceDeploymentPlanner createServiceDeploymentPlanner(Service service) {
-        if (service == null) {
-            return null;
-        }
-        Stack stack = objectMgr.findOne(Stack.class, STACK.ID, service.getStackId());
-        boolean isGlobalDeploymentStrategy = isGlobalDeploymentStrategy(service);
-        boolean isSelectorOnlyStrategy = isNoopStrategy(service);
-        if (isSelectorOnlyStrategy
-                || service.getKind().equalsIgnoreCase(ServiceConstants.KIND_DNS_SERVICE)
-                || service.getKind().equalsIgnoreCase(ServiceConstants.KIND_EXTERNAL_SERVICE)) {
-            return new NoOpServiceDeploymentPlanner(service, stack, new DeploymentManagerContext());
-        } else if (isGlobalDeploymentStrategy) {
-            return new GlobalServiceDeploymentPlanner(service, stack, new DeploymentManagerContext());
-        } else {
-            return new DefaultServiceDeploymentPlanner(service, stack, new DeploymentManagerContext());
-        }
-    }
 
-    protected boolean isGlobalDeploymentStrategy(Service service) {
-        return sdSvc.isGlobalService(service);
-    }
-
-    protected boolean isNoopStrategy(Service service) {
-        if (ServiceDiscoveryUtil.isNoopService(service) || isExternallyProvidedService(service)) {
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean isExternallyProvidedService(Service service) {
-        if (service.getKind().equalsIgnoreCase(ServiceConstants.KIND_DNS_SERVICE)
-                || service.getKind().equalsIgnoreCase(ServiceConstants.KIND_EXTERNAL_SERVICE)
-                || ServiceConstants.SERVICE_LIKE.contains(service.getKind())) {
-            return false;
-        }
-        return true;
-    }
 
     public final class DeploymentManagerContext {
         final public DeploymentUnitManager duMgr = duManager;
@@ -440,5 +402,6 @@ public class DeploymentManagerImpl implements DeploymentManager {
         final public ResourceMonitor resourceMonitor = resourceMntr;
         final public IdFormatter idFormatter = idFrmt;
         final public ServiceDao serviceDao = svcDao;
+        final public ServiceDiscoveryService sdService = sdSvc;
     }
 }

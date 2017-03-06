@@ -13,8 +13,8 @@ import io.cattle.platform.docker.constants.DockerInstanceConstants;
 import io.cattle.platform.object.meta.ObjectMetaDataManager;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitInstance;
-import io.cattle.platform.servicediscovery.deployment.StandaloneDeploymentUnitInstance;
-import io.cattle.platform.servicediscovery.deployment.impl.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
+import io.cattle.platform.servicediscovery.deployment.impl.instance.StandaloneDeploymentUnitInstance;
+import io.cattle.platform.servicediscovery.deployment.impl.manager.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
 import io.cattle.platform.util.type.CollectionUtils;
 import io.github.ibuildthecloud.gdapi.condition.Condition;
 import io.github.ibuildthecloud.gdapi.condition.ConditionType;
@@ -77,7 +77,8 @@ public class StandaloneDeploymentUnitImpl extends DeploymentUnitImpl {
                 INSTANCE.DEPLOYMENT_UNIT_ID, unit.getId());
         for (Instance instance : instances) {
             String launchConfigName = instance.getId().toString();
-            DeploymentUnitInstance unitInstance = new StandaloneDeploymentUnitInstance(context, instance.getName(),
+            StandaloneDeploymentUnitInstance unitInstance = new StandaloneDeploymentUnitInstance(context,
+                    instance.getName(),
                     instance,
                     launchConfigName);
             InstanceRevision revision = context.objectManager.findAny(InstanceRevision.class, INSTANCE_REVISION.ID,
@@ -100,7 +101,7 @@ public class StandaloneDeploymentUnitImpl extends DeploymentUnitImpl {
         for (DeploymentUnitInstance instance : this.getDeploymentUnitInstances()) {
             if (instance.isUnhealthy()) {
                 if (needToReplace(instance)) {
-                    DeploymentUnitInstance replacement = new StandaloneDeploymentUnitInstance(context, null,
+                    StandaloneDeploymentUnitInstance replacement = new StandaloneDeploymentUnitInstance(context, null,
                             null,
                             null);
                     addDeploymentInstance(replacement.getLaunchConfigName(), replacement);
@@ -131,6 +132,7 @@ public class StandaloneDeploymentUnitImpl extends DeploymentUnitImpl {
     private boolean needToReplace(DeploymentUnitInstance instance) {
         // only recreate unhealthy
         Instance replacement = context.objectManager.findAny(Instance.class, INSTANCE.REMOVED, null,
+                INSTANCE.SERVICE_ID, null,
                 INSTANCE.REPLACEMENT_FOR, instance.getInstance().getId(), ObjectMetaDataManager.STATE_FIELD,
                 new Condition(
                         ConditionType.NE, CommonStatesConstants.REMOVING));

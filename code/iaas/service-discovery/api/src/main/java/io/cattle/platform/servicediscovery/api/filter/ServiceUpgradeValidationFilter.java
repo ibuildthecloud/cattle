@@ -6,11 +6,11 @@ import io.cattle.platform.core.addon.ServiceUpgradeStrategy;
 import io.cattle.platform.core.constants.InstanceConstants;
 import io.cattle.platform.core.constants.ServiceConstants;
 import io.cattle.platform.core.model.Service;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.iaas.api.filter.common.AbstractDefaultResourceManagerFilter;
 import io.cattle.platform.json.JsonMapper;
 import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.util.DataAccessor;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
 import io.cattle.platform.storage.api.filter.ExternalTemplateInstanceFilter;
 import io.cattle.platform.storage.service.StorageService;
 import io.cattle.platform.util.type.CollectionUtils;
@@ -87,7 +87,7 @@ public class ServiceUpgradeValidationFilter extends AbstractDefaultResourceManag
                     Object.class);
             Object newLaunchConfig = inServiceStrategy.getLaunchConfig();
             if (newLaunchConfig != null) {
-                ServiceDiscoveryUtil.validateScaleSwitch(newLaunchConfig, launchConfig);
+                ServiceUtil.validateScaleSwitch(newLaunchConfig, launchConfig);
             }
             List<Object> secondaryLaunchConfigs = DataAccessor.fields(service)
                     .withKey(ServiceConstants.FIELD_SECONDARY_LAUNCH_CONFIGS)
@@ -97,7 +97,7 @@ public class ServiceUpgradeValidationFilter extends AbstractDefaultResourceManag
             inServiceStrategy.setPreviousSecondaryLaunchConfigs(secondaryLaunchConfigs);
             upgrade.setInServiceStrategy(inServiceStrategy);
             request.setRequestObject(jsonMapper.writeValueAsMap(upgrade));
-            ServiceDiscoveryUtil.upgradeServiceConfigs(service, inServiceStrategy, false);
+            ServiceUtil.upgradeServiceConfigs(service, inServiceStrategy, false);
         }
         objectManager.persist(service);
     }
@@ -140,7 +140,7 @@ public class ServiceUpgradeValidationFilter extends AbstractDefaultResourceManag
                 ValidationErrorCodes.throwValidationError(ValidationErrorCodes.INVALID_OPTION,
                         "LaunchConfig is required for load balancer service");
             }
-            ServiceDiscoveryUtil.injectBalancerLabelsAndHealthcheck((Map<Object, Object>) strategy.getLaunchConfig());
+            ServiceUtil.injectBalancerLabelsAndHealthcheck((Map<Object, Object>) strategy.getLaunchConfig());
         }
 
         Map<String, Map<Object, Object>> serviceLCs = getExistingLaunchConfigs(service);
@@ -250,7 +250,7 @@ public class ServiceUpgradeValidationFilter extends AbstractDefaultResourceManag
     }
 
     protected Map<String, Map<Object, Object>> getExistingLaunchConfigs(Service service) {
-        Map<String, Map<Object, Object>> serviceLCs = ServiceDiscoveryUtil.getServiceLaunchConfigsWithNames(service);
+        Map<String, Map<Object, Object>> serviceLCs = ServiceUtil.getServiceLaunchConfigsWithNames(service);
         Map<Object, Object> primaryLC = serviceLCs.get(ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME);
         serviceLCs.remove(ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME);
         serviceLCs.put(service.getName(), primaryLC);

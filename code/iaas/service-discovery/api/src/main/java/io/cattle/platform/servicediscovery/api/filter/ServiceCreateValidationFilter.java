@@ -11,13 +11,13 @@ import io.cattle.platform.core.model.InstanceRevision;
 import io.cattle.platform.core.model.Service;
 import io.cattle.platform.core.model.Stack;
 import io.cattle.platform.core.util.PortSpec;
+import io.cattle.platform.core.util.ServiceUtil;
+import io.cattle.platform.core.util.ServiceUtil.UpgradedConfig;
 import io.cattle.platform.iaas.api.filter.common.AbstractDefaultResourceManagerFilter;
 import io.cattle.platform.json.JsonMapper;
 import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.object.util.DataUtils;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil.UpgradedConfig;
 import io.cattle.platform.servicediscovery.api.util.selector.SelectorUtils;
 import io.cattle.platform.storage.api.filter.ExternalTemplateInstanceFilter;
 import io.cattle.platform.storage.service.StorageService;
@@ -158,7 +158,7 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
 
         Map<Object, Object> launchConfig = (Map<Object, Object>) data.get(ServiceConstants.FIELD_LAUNCH_CONFIG);
 
-        ServiceDiscoveryUtil.injectBalancerLabelsAndHealthcheck(launchConfig);
+        ServiceUtil.injectBalancerLabelsAndHealthcheck(launchConfig);
         data.put(ServiceConstants.FIELD_LAUNCH_CONFIG, launchConfig);
         request.setRequestObject(data);
         return request;
@@ -370,7 +370,7 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
                 secondary.add(lc);
             }
         }
-        UpgradedConfig upgrade = ServiceDiscoveryUtil.mergeLaunchConfigs(service, primary, secondary);
+        UpgradedConfig upgrade = ServiceUtil.mergeLaunchConfigs(service, primary, secondary);
         if (upgrade == null) {
             return request;
         }
@@ -423,7 +423,7 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
             return;
         }
 
-        ServiceDiscoveryUtil.validateScaleSwitch(newLaunchConfig, launchConfig);
+        ServiceUtil.validateScaleSwitch(newLaunchConfig, launchConfig);
     }
 
 
@@ -520,7 +520,7 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
                 continue;
             }
             usedNames.add(existingSvc.getName().toLowerCase());
-            for (String usedLcName : ServiceDiscoveryUtil.getServiceLaunchConfigNames(existingSvc)) {
+            for (String usedLcName : ServiceUtil.getServiceLaunchConfigNames(existingSvc)) {
                 usedNames.add(usedLcName.toLowerCase());
             }
         }

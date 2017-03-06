@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.service;
+package io.cattle.platform.servicediscovery.lookups;
 
 import io.cattle.platform.core.model.Service;
 

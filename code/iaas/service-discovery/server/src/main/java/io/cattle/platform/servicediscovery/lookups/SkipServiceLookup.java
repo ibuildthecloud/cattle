@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.service.impl;
+package io.cattle.platform.servicediscovery.lookups;
 
 import static io.cattle.platform.core.model.tables.HostTable.*;
 import io.cattle.platform.core.dao.HostDao;
@@ -7,7 +7,6 @@ import io.cattle.platform.core.model.Agent;
 import io.cattle.platform.core.model.Host;
 import io.cattle.platform.core.model.Service;
 import io.cattle.platform.object.ObjectManager;
-import io.cattle.platform.servicediscovery.service.ServiceLookup;
 
 import java.util.Collection;
 

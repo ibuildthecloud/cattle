@@ -19,6 +19,7 @@ import io.cattle.platform.core.model.ServiceIndex;
 import io.cattle.platform.core.model.Stack;
 import io.cattle.platform.core.model.Volume;
 import io.cattle.platform.core.model.VolumeTemplate;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.core.util.SystemLabels;
 import io.cattle.platform.docker.constants.DockerInstanceConstants;
 import io.cattle.platform.engine.process.impl.ProcessCancelException;
@@ -26,11 +27,10 @@ import io.cattle.platform.lock.LockCallback;
 import io.cattle.platform.object.process.StandardProcess;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.process.common.util.ProcessUtils;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitInstance;
-import io.cattle.platform.servicediscovery.deployment.ServiceDeploymentUnitInstance;
-import io.cattle.platform.servicediscovery.deployment.impl.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
+import io.cattle.platform.servicediscovery.deployment.impl.instance.ServiceDeploymentUnitInstance;
 import io.cattle.platform.servicediscovery.deployment.impl.lock.StackVolumeLock;
+import io.cattle.platform.servicediscovery.deployment.impl.manager.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
 import io.cattle.platform.util.exception.DeploymentUnitAllocateException;
 import io.cattle.platform.util.type.CollectionUtils;
 
@@ -75,7 +75,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
         this.stack = context.objectManager.findOne(Stack.class, STACK.ID, service.getStackId());
         this.labels = DataAccessor.fields(unit).withKey(InstanceConstants.FIELD_LABELS)
                 .withDefault(Collections.EMPTY_MAP).as(Map.class);
-        this.launchConfigNames = ServiceDiscoveryUtil.getServiceLaunchConfigNames(service);
+        this.launchConfigNames = ServiceUtil.getServiceLaunchConfigNames(service);
         collectDeploymentUnitInstances();
         generateSidekickReferences();
     }
@@ -96,7 +96,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
     protected void addMissingInstance(String launchConfigName) {
         if (!launchConfigToInstance.containsKey(launchConfigName)) {
             Integer order = Integer.valueOf(this.unit.getServiceIndex());
-            String instanceName = ServiceDiscoveryUtil.generateServiceInstanceName(stack,
+            String instanceName = ServiceUtil.generateServiceInstanceName(stack,
                     service, launchConfigName, order);
             DeploymentUnitInstance deploymentUnitInstance = new ServiceDeploymentUnitInstance(context, service,
                     stack, instanceName, null, null, launchConfigName);
@@ -124,7 +124,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
 
         deployParams.put(InstanceConstants.FIELD_DEPLOYMENT_UNIT_UUID, unit.getUuid());
         deployParams.put(InstanceConstants.FIELD_DEPLOYMENT_UNIT_ID, unit.getId());
-        deployParams.put(ServiceConstants.FIELD_VERSION, ServiceDiscoveryUtil.getLaunchConfigObject(
+        deployParams.put(ServiceConstants.FIELD_VERSION, ServiceUtil.getLaunchConfigObject(
                 service, instance.getLaunchConfigName(), ServiceConstants.FIELD_VERSION));
         addDns(instance, deployParams);
 
@@ -178,7 +178,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
     @SuppressWarnings("unchecked")
     protected List<Integer> getSidekickContainersId(String launchConfigName, SidekickType sidekickType) {
         List<Integer> sidekickInstanceIds = new ArrayList<>();
-        Object sidekickInstances = ServiceDiscoveryUtil.getLaunchConfigObject(service, launchConfigName,
+        Object sidekickInstances = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                 sidekickType.launchConfigFieldName);
         if (sidekickInstances != null) {
             if (sidekickType.isList) {
@@ -188,7 +188,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
             }
         }
 
-        Object sidekicksLaunchConfigObj = ServiceDiscoveryUtil.getLaunchConfigObject(service, launchConfigName,
+        Object sidekicksLaunchConfigObj = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                 sidekickType.launchConfigType);
         if (sidekicksLaunchConfigObj != null) {
             List<String> sidekicksLaunchConfigNames = new ArrayList<>();
@@ -218,7 +218,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
 
     protected void addDns(DeploymentUnitInstance instance, Map<String, Object> deployParams) {
         boolean addDns = true;
-        Object labelsObj = ServiceDiscoveryUtil.getLaunchConfigObject(
+        Object labelsObj = ServiceUtil.getLaunchConfigObject(
                 service, instance.getLaunchConfigName(), InstanceConstants.FIELD_LABELS);
         if (labelsObj != null) {
             Map<String, Object> labels = CollectionUtils.toMap(labelsObj);
@@ -263,8 +263,8 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
     }
 
     protected List<String> getSearchDomains() {
-        String stackNamespace = ServiceDiscoveryUtil.getStackNamespace(this.stack, this.service);
-        String serviceNamespace = ServiceDiscoveryUtil
+        String stackNamespace = ServiceUtil.getStackNamespace(this.stack, this.service);
+        String serviceNamespace = ServiceUtil
                 .getServiceNamespace(this.stack, this.service);
         return Arrays.asList(stackNamespace, serviceNamespace);
     }
@@ -274,7 +274,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
     protected List<String> getSidekickRefs(String launchConfigName) {
         List<String> configNames = new ArrayList<>();
         for (SidekickType sidekickType : SidekickType.supportedTypes) {
-            Object sidekicksLaunchConfigObj = ServiceDiscoveryUtil.getLaunchConfigObject(service, launchConfigName,
+            Object sidekicksLaunchConfigObj = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                     sidekickType.launchConfigType);
             if (sidekicksLaunchConfigObj != null) {
                 if (sidekickType.isList) {
@@ -386,7 +386,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
 
     @SuppressWarnings("unchecked")
     protected List<String> getNamedVolumes(String launchConfigName) {
-        Object dataVolumesObj = ServiceDiscoveryUtil.getLaunchConfigObject(service, launchConfigName,
+        Object dataVolumesObj = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                 InstanceConstants.FIELD_DATA_VOLUMES);
         List<String> namedVolumes = new ArrayList<>();
         if (dataVolumesObj != null) {
@@ -560,14 +560,14 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
 
         // allocate ip address if not set
         if (DataAccessor.fieldBool(service, ServiceConstants.FIELD_SERVICE_RETAIN_IP)) {
-            Object requestedIpObj = ServiceDiscoveryUtil.getLaunchConfigObject(service, launchConfigName,
+            Object requestedIpObj = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                     InstanceConstants.FIELD_REQUESTED_IP_ADDRESS);
             String requestedIp = null;
             if (requestedIpObj != null) {
                 requestedIp = requestedIpObj.toString();
             } else {
                 // can be passed via labels
-                Object labels = ServiceDiscoveryUtil.getLaunchConfigObject(service, launchConfigName,
+                Object labels = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                         InstanceConstants.FIELD_LABELS);
                 if (labels != null) {
                     requestedIp = ((Map<String, String>) labels).get(SystemLabels.LABEL_REQUESTED_IP);

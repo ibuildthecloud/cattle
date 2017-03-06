@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.deployment.impl;
+package io.cattle.platform.servicediscovery.deployment.impl.manager;
 
 import io.cattle.platform.activity.ActivityService;
 import io.cattle.platform.allocator.service.AllocationHelper;
@@ -9,9 +9,11 @@ import io.cattle.platform.configitem.version.ConfigItemStatusManager;
 import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.dao.GenericResourceDao;
 import io.cattle.platform.core.dao.ServiceDao;
+import io.cattle.platform.core.dao.ServiceExposeMapDao;
 import io.cattle.platform.core.dao.VolumeDao;
 import io.cattle.platform.core.model.DeploymentUnit;
 import io.cattle.platform.core.model.Service;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.docker.transform.DockerTransformer;
 import io.cattle.platform.engine.idempotent.IdempotentRetryException;
 import io.cattle.platform.json.JsonMapper;
@@ -21,7 +23,6 @@ import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.process.StandardProcess;
 import io.cattle.platform.object.resource.ResourceMonitor;
-import io.cattle.platform.servicediscovery.api.dao.ServiceExposeMapDao;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitManager;
 import io.cattle.platform.servicediscovery.deployment.impl.lock.DeploymentUnitLock;
 import io.cattle.platform.servicediscovery.deployment.impl.unit.DeploymentUnitImpl;
@@ -167,7 +168,7 @@ public class DeploymentUnitManagerImpl implements DeploymentUnitManager {
                 }
                 if (unit.getServiceId() != null) {
                     final Service service = objectMgr.loadResource(Service.class, unit.getServiceId());
-                    if (sdSvc.isServiceValidForReconcile(service)) {
+                    if (ServiceUtil.isServiceValidForReconcile(service)) {
                         activitySvc.run(service, unit, "deploymentunit.trigger", "Re-evaluating deployment unit state",
                                 new Runnable() {
                             @Override

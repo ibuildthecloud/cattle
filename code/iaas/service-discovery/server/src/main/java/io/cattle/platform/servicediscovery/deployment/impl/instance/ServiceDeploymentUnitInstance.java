@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.deployment;
+package io.cattle.platform.servicediscovery.deployment.impl.instance;
 
 import io.cattle.platform.activity.ActivityLog;
 import io.cattle.platform.core.addon.RestartPolicy;
@@ -10,12 +10,12 @@ import io.cattle.platform.core.model.Service;
 import io.cattle.platform.core.model.ServiceExposeMap;
 import io.cattle.platform.core.model.Stack;
 import io.cattle.platform.core.model.tables.records.ServiceRecord;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.docker.constants.DockerInstanceConstants;
 import io.cattle.platform.iaas.api.auditing.AuditEventType;
 import io.cattle.platform.object.jooq.utils.JooqUtils;
 import io.cattle.platform.object.process.StandardProcess;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
-import io.cattle.platform.servicediscovery.deployment.impl.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
+import io.cattle.platform.servicediscovery.deployment.impl.manager.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,11 +26,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jooq.exception.DataChangedException;
 
 
-public class ServiceDeploymentUnitInstance extends DeploymentUnitInstance {
+public class ServiceDeploymentUnitInstance extends AbstractDeploymentUnitInstance {
     protected Service service;
     protected Stack stack;
     protected ServiceExposeMap exposeMap;
-
 
     public ServiceDeploymentUnitInstance(DeploymentUnitManagerContext context, Service service, Stack stack,
             String instanceName, Instance instance, ServiceExposeMap exposeMap, String launchConfigName) {
@@ -87,7 +86,7 @@ public class ServiceDeploymentUnitInstance extends DeploymentUnitInstance {
 
     @SuppressWarnings("unchecked")
     protected Map<String, Object> populateLaunchConfigData(Map<String, Object> deployParams) {
-        Map<String, Object> launchConfigData = ServiceDiscoveryUtil.buildServiceInstanceLaunchData(service,
+        Map<String, Object> launchConfigData = context.sdService.buildServiceInstanceLaunchData(service,
                 deployParams, launchConfigName, context.allocatorService);
         launchConfigData.put("name", this.instanceName);
         Object labels = launchConfigData.get(InstanceConstants.FIELD_LABELS);
@@ -147,7 +146,7 @@ public class ServiceDeploymentUnitInstance extends DeploymentUnitInstance {
 
     @Override
     public boolean isRestartAlways() {
-        Object policyObj = ServiceDiscoveryUtil.getLaunchConfigObject(service, launchConfigName,
+        Object policyObj = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                 DockerInstanceConstants.FIELD_RESTART_POLICY);
         if (policyObj == null) {
             return true;

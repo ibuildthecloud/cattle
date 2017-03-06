@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.deployment;
+package io.cattle.platform.servicediscovery.deployment.impl.instance;
 
 import io.cattle.platform.core.addon.RestartPolicy;
 import io.cattle.platform.core.constants.CommonStatesConstants;
@@ -6,11 +6,11 @@ import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.docker.constants.DockerInstanceConstants;
 import io.cattle.platform.object.process.StandardProcess;
 import io.cattle.platform.object.util.DataAccessor;
-import io.cattle.platform.servicediscovery.deployment.impl.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
+import io.cattle.platform.servicediscovery.deployment.impl.manager.DeploymentUnitManagerImpl.DeploymentUnitManagerContext;
 
 import java.util.Map;
 
-public class StandaloneDeploymentUnitInstance extends DeploymentUnitInstance {
+public class StandaloneDeploymentUnitInstance extends AbstractDeploymentUnitInstance {
 
     public StandaloneDeploymentUnitInstance(DeploymentUnitManagerContext context, String instanceName,
             Instance instance, String launchConfigName) {

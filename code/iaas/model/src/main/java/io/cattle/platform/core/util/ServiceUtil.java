@@ -1,6 +1,5 @@
-package io.cattle.platform.servicediscovery.api.util;
+package io.cattle.platform.core.util;
 
-import io.cattle.platform.allocator.service.AllocationHelper;
 import io.cattle.platform.archaius.util.ArchaiusUtil;
 import io.cattle.platform.core.addon.InServiceUpgradeStrategy;
 import io.cattle.platform.core.addon.InstanceHealthCheck;
@@ -13,12 +12,8 @@ import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.InstanceRevision;
 import io.cattle.platform.core.model.Service;
 import io.cattle.platform.core.model.Stack;
-import io.cattle.platform.core.util.PortSpec;
-import io.cattle.platform.core.util.SystemLabels;
-import io.cattle.platform.object.meta.ObjectMetaDataManager;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.object.util.DataUtils;
-import io.cattle.platform.servicediscovery.api.resource.ServiceDiscoveryConfigItem;
 import io.cattle.platform.util.type.CollectionUtils;
 import io.github.ibuildthecloud.gdapi.validation.ValidationErrorCodes;
 
@@ -35,7 +30,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.netflix.config.DynamicStringListProperty;
 
-public class ServiceDiscoveryUtil {
+public class ServiceUtil {
 
     private static final int LB_HEALTH_CHECK_PORT = 42;
     private static DynamicStringListProperty UPGRADE_TRIGGER_FIELDS = ArchaiusUtil.getList("upgrade.trigger.fields");
@@ -117,21 +112,6 @@ public class ServiceDiscoveryUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static Map<String, String> getMergedServiceLabels(Service service, AllocationHelper allocationHelper) {
-        List<String> launchConfigNames = getServiceLaunchConfigNames(service);
-        Map<String, String> labelsStr = new HashMap<>();
-        for (String currentLaunchConfigName : launchConfigNames) {
-            Map<String, Object> data = getLaunchConfigDataAsMap(service, currentLaunchConfigName);
-            Object l = data.get(ServiceDiscoveryConfigItem.LABELS.getCattleName());
-            if (l != null) {
-                Map<String, String> labels = (HashMap<String, String>) l;
-                    allocationHelper.mergeLabels(labels, labelsStr);
-            }
-        }
-        return labelsStr;
-    }
-
-    @SuppressWarnings("unchecked")
     public static Map<String, String> getLaunchConfigLabels(Service service, String launchConfigName) {
         if (launchConfigName == null) {
             launchConfigName = ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME;
@@ -179,19 +159,19 @@ public class ServiceDiscoveryUtil {
         Map<String, Object> data = new HashMap<>();
         data.putAll(launchConfigData);
 
-        Object labels = data.get(ServiceDiscoveryConfigItem.LABELS.getCattleName());
+        Object labels = data.get(InstanceConstants.FIELD_LABELS);
         if (labels != null) {
             Map<String, String> labelsMap = new HashMap<String, String>();
             labelsMap.putAll((Map<String, String>) labels);
 
             // overwrite with a copy of the map
-            data.put(ServiceDiscoveryConfigItem.LABELS.getCattleName(), labelsMap);
+            data.put(InstanceConstants.FIELD_LABELS, labelsMap);
         }
         return data;
     }
 
     public static Object getLaunchConfigObject(Service service, String launchConfigName, String objectName) {
-        Map<String, Object> serviceData = ServiceDiscoveryUtil.getLaunchConfigDataAsMap(service, launchConfigName);
+        Map<String, Object> serviceData = ServiceUtil.getLaunchConfigDataAsMap(service, launchConfigName);
         return serviceData.get(objectName);
     }
 
@@ -219,57 +199,8 @@ public class ServiceDiscoveryUtil {
         return instanceName.substring(charAt, instanceName.length());
     }
 
-    @SuppressWarnings("unchecked")
-    public static Map<String, Object> buildServiceInstanceLaunchData(Service service, Map<String, Object> deployParams,
-            String launchConfigName, AllocationHelper allocationHelper) {
-        Map<String, Object> serviceData = getLaunchConfigDataAsMap(service, launchConfigName);
-        Map<String, Object> launchConfigItems = new HashMap<>();
-
-        // 1. put all parameters retrieved through deployParams
-        if (deployParams != null) {
-            launchConfigItems.putAll(deployParams);
-        }
-
-        // 2. Get parameters defined on the service level (merge them with the ones defined in
-        for (String key : serviceData.keySet()) {
-            Object dataObj = serviceData.get(key);
-            if (launchConfigItems.get(key) != null) {
-                if (dataObj instanceof Map) {
-                    // unfortunately, need to make an except for labels due to the merging aspect of the values
-                    if (key.equalsIgnoreCase(InstanceConstants.FIELD_LABELS)) {
-                        allocationHelper.normalizeLabels(
-                                service.getStackId(),
-                                (Map<String, String>) launchConfigItems.get(key),
-                                (Map<String, String>) dataObj);
-                        allocationHelper.mergeLabels((Map<String, String>) launchConfigItems.get(key),
-                                (Map<String, String>) dataObj);
-                    } else {
-                        ((Map<Object, Object>) dataObj).putAll((Map<Object, Object>) launchConfigItems.get(key));
-                    }
-                } else if (dataObj instanceof List) {
-                    for (Object existing : (List<Object>) launchConfigItems.get(key)) {
-                        if (!((List<Object>) dataObj).contains(existing)) {
-                            ((List<Object>) dataObj).add(existing);
-                        }
-                    }
-                }
-            }
-            if (dataObj != null) {
-                launchConfigItems.put(key, dataObj);
-            }
-        }
-
-        // 3. add extra parameters
-        launchConfigItems.put("accountId", service.getAccountId());
-        if (!launchConfigItems.containsKey(ObjectMetaDataManager.KIND_FIELD)) {
-            launchConfigItems.put(ObjectMetaDataManager.KIND_FIELD, InstanceConstants.KIND_CONTAINER);
-        }
-
-        return launchConfigItems;
-    }
-
     public static boolean isNoopService(Service service) {
-        Object imageUUID = ServiceDiscoveryUtil.getLaunchConfigDataAsMap(service,
+        Object imageUUID = ServiceUtil.getLaunchConfigDataAsMap(service,
                 ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME).get(
                 InstanceConstants.FIELD_IMAGE_UUID);
         return (service.getSelectorContainer() != null
@@ -278,7 +209,7 @@ public class ServiceDiscoveryUtil {
     }
 
     public static boolean isNoopLBService(Service service) {
-        Object imageUUID = ServiceDiscoveryUtil.getLaunchConfigDataAsMap(service,
+        Object imageUUID = ServiceUtil.getLaunchConfigDataAsMap(service,
                 ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME).get(
                 InstanceConstants.FIELD_IMAGE_UUID);
         return service.getKind().equalsIgnoreCase(ServiceConstants.KIND_LOAD_BALANCER_SERVICE)
@@ -675,4 +606,66 @@ public class ServiceDiscoveryUtil {
         return images;
     }
 
+    public static boolean isActiveService(Service service) {
+        return getServiceActiveStates().contains(service.getState());
+    }
+
+    public static boolean isServiceValidForReconcile(Service service) {
+        return service != null
+                && (service.getState().equalsIgnoreCase(CommonStatesConstants.ACTIVE) || service.getState()
+                        .equalsIgnoreCase(CommonStatesConstants.UPDATING_ACTIVE))
+                && !service.getIsUpgrade();
+    }
+
+    /**
+     * Add labels from 'srcMap' to 'destMap'. If key already exists in destMap, either
+     * overwrite or merge depending on whether the key is an affinity rule or not
+     */
+    public static void mergeLabels(Map<String, String> srcMap, Map<String, String> destMap) {
+        if (srcMap == null || destMap == null) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : srcMap.entrySet()) {
+            String key = entry.getKey();
+            if (key.toLowerCase().startsWith("io.rancher")) {
+                key = key.toLowerCase();
+            }
+            String value = entry.getValue();
+            if (key.startsWith("io.rancher.scheduler.affinity")) {
+                // merge labels
+                String destValue = destMap.get(key);
+                if (StringUtils.isEmpty(destValue)) {
+                    destMap.put(key, value);
+                } else if (StringUtils.isEmpty(value)) {
+                    continue;
+                } else if (!destValue.toLowerCase().contains(value.toLowerCase())) {
+                    destMap.put(key, destValue + "," + value);
+                }
+            } else {
+                // overwrite label value
+                destMap.put(key, value);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, String> getMergedServiceLabels(Service service) {
+        List<String> launchConfigNames = ServiceUtil.getServiceLaunchConfigNames(service);
+        Map<String, String> labelsStr = new HashMap<>();
+        for (String currentLaunchConfigName : launchConfigNames) {
+            Map<String, Object> data = getLaunchConfigDataAsMap(service, currentLaunchConfigName);
+            Object l = data.get(InstanceConstants.FIELD_LABELS);
+            if (l != null) {
+                Map<String, String> labels = (HashMap<String, String>) l;
+                mergeLabels(labels, labelsStr);
+            }
+        }
+        return labelsStr;
+    }
+
+    public static boolean isGlobalService(Service service) {
+        Map<String, String> serviceLabels = getMergedServiceLabels(service);
+        String globalService = serviceLabels.get(ServiceConstants.LABEL_SERVICE_GLOBAL);
+        return Boolean.valueOf(globalService);
+    }
 }

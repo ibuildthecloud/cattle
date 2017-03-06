@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.deployment.impl.lock;
+package io.cattle.platform.core.dao.impl;
 
 import io.cattle.platform.lock.definition.AbstractLockDefinition;
 

@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.api.dao;
+package io.cattle.platform.core.dao;
 
 import io.cattle.platform.core.model.DeploymentUnit;
 import io.cattle.platform.core.model.Host;

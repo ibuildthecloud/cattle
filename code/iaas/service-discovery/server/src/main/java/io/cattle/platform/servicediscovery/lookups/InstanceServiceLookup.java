@@ -1,9 +1,8 @@
-package io.cattle.platform.servicediscovery.service.impl;
+package io.cattle.platform.servicediscovery.lookups;
 
 import io.cattle.platform.core.dao.InstanceDao;
 import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.Service;
-import io.cattle.platform.servicediscovery.service.ServiceLookup;
 
 import java.util.Collection;
 

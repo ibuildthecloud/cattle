@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.api.dao;
+package io.cattle.platform.core.dao;
 
 import io.cattle.platform.core.addon.ServiceLink;
 import io.cattle.platform.core.model.Instance;

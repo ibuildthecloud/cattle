@@ -1,7 +1,7 @@
-package io.cattle.platform.servicediscovery.deployment.impl.healthaction;
+package io.cattle.platform.servicediscovery.healthaction;
 
 import io.cattle.platform.core.model.DeploymentUnit;
-import io.cattle.platform.servicediscovery.deployment.impl.DeploymentManagerImpl.DeploymentManagerContext;
+import io.cattle.platform.servicediscovery.service.impl.DeploymentManagerImpl.DeploymentManagerContext;
 
 import java.util.ArrayList;
 import java.util.List;

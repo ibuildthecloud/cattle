@@ -1,11 +1,10 @@
-package io.cattle.platform.servicediscovery.service.impl;
+package io.cattle.platform.servicediscovery.lookups;
 
 import static io.cattle.platform.core.model.tables.ServiceTable.*;
 import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.model.DeploymentUnit;
 import io.cattle.platform.core.model.Service;
 import io.cattle.platform.object.ObjectManager;
-import io.cattle.platform.servicediscovery.service.ServiceLookup;
 import io.github.ibuildthecloud.gdapi.condition.Condition;
 import io.github.ibuildthecloud.gdapi.condition.ConditionType;
 

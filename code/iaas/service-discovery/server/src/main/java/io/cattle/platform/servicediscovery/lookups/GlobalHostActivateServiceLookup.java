@@ -1,16 +1,15 @@
-package io.cattle.platform.servicediscovery.service.impl;
+package io.cattle.platform.servicediscovery.lookups;
 
 import static io.cattle.platform.core.constants.ExternalEventConstants.*;
-
 import io.cattle.platform.allocator.service.AllocationHelper;
+import io.cattle.platform.core.dao.ServiceExposeMapDao;
 import io.cattle.platform.core.model.ExternalEvent;
 import io.cattle.platform.core.model.Host;
 import io.cattle.platform.core.model.HostLabelMap;
 import io.cattle.platform.core.model.Service;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.object.ObjectManager;
-import io.cattle.platform.servicediscovery.api.dao.ServiceExposeMapDao;
 import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
-import io.cattle.platform.servicediscovery.service.ServiceLookup;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +57,7 @@ public class GlobalHostActivateServiceLookup implements ServiceLookup {
         List<? extends Service> services = expMapDao.getActiveServices(accountId);
         List<Service> activeGlobalServices = new ArrayList<Service>();
         for (Service service : services) {
-            if (sdSvc.isGlobalService(service) || sdSvc.isScalePolicyService(service)) {
+            if (ServiceUtil.isGlobalService(service) || sdSvc.isScalePolicyService(service)) {
                 activeGlobalServices.add(service);
             }
         }

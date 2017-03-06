@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.deployment.impl.unit;
+package io.cattle.platform.servicediscovery.deployment.impl.util;
 
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitInstanceIdGenerator;
 

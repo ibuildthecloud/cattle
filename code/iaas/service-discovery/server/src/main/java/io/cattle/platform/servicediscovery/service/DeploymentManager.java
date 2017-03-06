@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.deployment;
+package io.cattle.platform.servicediscovery.service;
 
 import io.cattle.platform.configitem.events.ConfigUpdate;
 import io.cattle.platform.core.model.Service;

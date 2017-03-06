@@ -7,6 +7,7 @@ import io.cattle.platform.activity.ActivityService;
 import io.cattle.platform.allocator.service.AllocationHelper;
 import io.cattle.platform.core.addon.InServiceUpgradeStrategy;
 import io.cattle.platform.core.addon.RollingRestartStrategy;
+import io.cattle.platform.core.addon.ServiceLink;
 import io.cattle.platform.core.addon.ServiceRestart;
 import io.cattle.platform.core.addon.ServiceUpgradeStrategy;
 import io.cattle.platform.core.addon.ToServiceUpgradeStrategy;
@@ -15,12 +16,16 @@ import io.cattle.platform.core.constants.GenericObjectConstants;
 import io.cattle.platform.core.constants.HealthcheckConstants;
 import io.cattle.platform.core.constants.InstanceConstants;
 import io.cattle.platform.core.constants.ServiceConstants;
+import io.cattle.platform.core.dao.ServiceConsumeMapDao;
 import io.cattle.platform.core.dao.ServiceDao;
+import io.cattle.platform.core.dao.ServiceExposeMapDao;
 import io.cattle.platform.core.model.DeploymentUnit;
 import io.cattle.platform.core.model.GenericObject;
 import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.Service;
+import io.cattle.platform.core.model.ServiceConsumeMap;
 import io.cattle.platform.core.model.ServiceExposeMap;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.engine.process.ExitReason;
 import io.cattle.platform.engine.process.impl.ProcessCancelException;
 import io.cattle.platform.engine.process.impl.ProcessExecutionExitException;
@@ -34,11 +39,9 @@ import io.cattle.platform.object.resource.ResourceMonitor;
 import io.cattle.platform.object.resource.ResourcePredicate;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.process.common.util.ProcessUtils;
-import io.cattle.platform.servicediscovery.api.dao.ServiceExposeMapDao;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
-import io.cattle.platform.servicediscovery.deployment.DeploymentManager;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitManager;
 import io.cattle.platform.servicediscovery.deployment.impl.lock.ServiceLock;
+import io.cattle.platform.servicediscovery.service.DeploymentManager;
 import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
 import io.cattle.platform.servicediscovery.upgrade.UpgradeManager;
 
@@ -89,6 +92,8 @@ public class UpgradeManagerImpl implements UpgradeManager {
     ResourceMonitor resourceMtr;
     @Inject
     AllocationHelper allocationHelper;
+    @Inject
+    ServiceConsumeMapDao consumeMapDao;
 
     private static final long SLEEP = 1000L;
 
@@ -363,7 +368,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
             return;
         }
         List<GenericObject> waitList = new ArrayList<>();
-        for (String image : ServiceDiscoveryUtil.getServiceImages(service)) {
+        for (String image : ServiceUtil.getServiceImages(service)) {
             GenericObject pullTask = getPullTask(revisionId, service.getAccountId());
             if (pullTask != null) {
                 if (pullTask.getState().equalsIgnoreCase(CommonStatesConstants.ACTIVE)) {
@@ -376,7 +381,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
                 data.put("image", image);
                 data.put(ObjectMetaDataManager.ACCOUNT_FIELD, service.getAccountId());
                 data.put(InstanceConstants.FIELD_LABELS,
-                        ServiceDiscoveryUtil.getMergedServiceLabels(service, allocationHelper));
+                        ServiceUtil.getMergedServiceLabels(service));
                 pullTask = objectManager.create(GenericObject.class, data);
             }
             if (pullTask.getState().equalsIgnoreCase(CommonStatesConstants.REQUESTED)) {
@@ -410,7 +415,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
             return;
         }
 
-        serviceDiscoveryService.cloneConsumingServices(service, objectManager.loadResource(Service.class,
+        cloneConsumingServices(service, objectManager.loadResource(Service.class,
                 strategy.getToServiceId()));
     }
 
@@ -703,5 +708,18 @@ public class UpgradeManagerImpl implements UpgradeManager {
                 }
             }
         });
+    }
+
+    protected void cloneConsumingServices(Service fromService, Service toService) {
+        List<ServiceLink> linksToCreate = new ArrayList<>();
+
+        for (ServiceConsumeMap map : consumeMapDao.findConsumingServices(fromService.getId())) {
+            ServiceLink link = new ServiceLink(toService.getId(), map.getName());
+
+            link.setConsumingServiceId(map.getServiceId());
+            linksToCreate.add(link);
+        }
+
+        consumeMapDao.createServiceLinks(linksToCreate);
     }
 }

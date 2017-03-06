@@ -11,12 +11,14 @@ import io.cattle.platform.core.constants.NetworkConstants;
 import io.cattle.platform.core.constants.ServiceConstants;
 import io.cattle.platform.core.dao.DataDao;
 import io.cattle.platform.core.dao.LoadBalancerInfoDao;
+import io.cattle.platform.core.dao.ServiceConsumeMapDao;
 import io.cattle.platform.core.dao.ServiceDao;
 import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.Service;
 import io.cattle.platform.core.model.ServiceConsumeMap;
 import io.cattle.platform.core.model.Stack;
 import io.cattle.platform.core.model.VolumeTemplate;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.core.util.LBMetadataUtil.LBConfigMetadataStyle;
 import io.cattle.platform.docker.constants.DockerInstanceConstants;
 import io.cattle.platform.json.JsonMapper;
@@ -24,11 +26,9 @@ import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.object.util.DataUtils;
-import io.cattle.platform.servicediscovery.api.dao.ServiceConsumeMapDao;
 import io.cattle.platform.servicediscovery.api.resource.ServiceDiscoveryConfigItem;
 import io.cattle.platform.servicediscovery.api.service.RancherConfigToComposeFormatter;
 import io.cattle.platform.servicediscovery.api.service.ServiceDiscoveryApiService;
-import io.cattle.platform.servicediscovery.api.util.ServiceDiscoveryUtil;
 import io.cattle.platform.token.CertSet;
 import io.cattle.platform.token.impl.RSAKeyProvider;
 
@@ -165,11 +165,11 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
                 TransformerUtils.invokerTransformer("getId"));
         Map<String, Object> volumesData = new HashMap<String, Object>();
         for (Service service : servicesToExport) {
-            List<String> launchConfigNames = ServiceDiscoveryUtil.getServiceLaunchConfigNames(service);
+            List<String> launchConfigNames = ServiceUtil.getServiceLaunchConfigNames(service);
             for (String launchConfigName : launchConfigNames) {
                 boolean isPrimaryConfig = launchConfigName
                         .equals(ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME);
-                Map<String, Object> cattleServiceData = ServiceDiscoveryUtil.getLaunchConfigWithServiceDataAsMap(
+                Map<String, Object> cattleServiceData = ServiceUtil.getLaunchConfigWithServiceDataAsMap(
                         service, launchConfigName);
                 Map<String, Object> composeServiceData = new HashMap<>();
                 excludeRancherHash(cattleServiceData);
@@ -532,7 +532,7 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
 
     @SuppressWarnings("unchecked")
     protected void populateSidekickLabels(Service service, Map<String, Object> composeServiceData, boolean isPrimary) {
-        List<? extends String> configs = ServiceDiscoveryUtil
+        List<? extends String> configs = ServiceUtil
                 .getServiceLaunchConfigNames(service);
         configs.remove(ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME);
         StringBuilder sidekicks = new StringBuilder();
@@ -608,7 +608,7 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
         Object networkMode = composeServiceData.get(ServiceDiscoveryConfigItem.NETWORKMODE.getDockerName());
         if (networkMode != null) {
             if (networkMode.equals(NetworkConstants.NETWORK_MODE_CONTAINER)) {
-                Map<String, Object> serviceData = ServiceDiscoveryUtil.getLaunchConfigDataAsMap(service,
+                Map<String, Object> serviceData = ServiceUtil.getLaunchConfigDataAsMap(service,
                         launchConfigName);
                 // network mode can be passed by container, or by service name, so check both
                 // networkFromContainerId wins
@@ -616,7 +616,7 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
                         .fieldInteger(service, DockerInstanceConstants.DOCKER_CONTAINER);
                 if (targetContainerId != null) {
                     Instance instance = objectManager.loadResource(Instance.class, targetContainerId.longValue());
-                    String instanceName = ServiceDiscoveryUtil.getInstanceName(instance);
+                    String instanceName = ServiceUtil.getInstanceName(instance);
                     composeServiceData.put(ServiceDiscoveryConfigItem.NETWORKMODE.getDockerName(),
                             NetworkConstants.NETWORK_MODE_CONTAINER + ":" + instanceName);
                 } else {
@@ -680,7 +680,7 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
             Map<String, Object> composeServiceData) {
         List<String> namesCombined = new ArrayList<>();
         List<String> launchConfigNames = new ArrayList<>();
-        Map<String, Object> launchConfigData = ServiceDiscoveryUtil.getLaunchConfigDataAsMap(service, launchConfigName);
+        Map<String, Object> launchConfigData = ServiceUtil.getLaunchConfigDataAsMap(service, launchConfigName);
         Object dataVolumesLaunchConfigs = launchConfigData.get(
                 ServiceConstants.FIELD_DATA_VOLUMES_LAUNCH_CONFIG);
 
@@ -699,7 +699,7 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
             for (Integer instanceId : instanceIds) {
                 Instance instance = objectManager.findOne(Instance.class, INSTANCE.ID, instanceId, INSTANCE.REMOVED,
                         null);
-                String instanceName = ServiceDiscoveryUtil.getInstanceName(instance);
+                String instanceName = ServiceUtil.getInstanceName(instance);
                 if (instanceName != null) {
                     namesCombined.add(instanceName);
                 }

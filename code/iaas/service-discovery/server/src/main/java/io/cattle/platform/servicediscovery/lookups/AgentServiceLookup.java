@@ -1,14 +1,14 @@
-package io.cattle.platform.servicediscovery.service.impl;
+package io.cattle.platform.servicediscovery.lookups;
 
 import static io.cattle.platform.core.model.tables.HostTable.*;
 import static io.cattle.platform.core.model.tables.ServiceTable.*;
 import io.cattle.platform.core.model.Agent;
 import io.cattle.platform.core.model.Host;
 import io.cattle.platform.core.model.Service;
+import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.db.jooq.dao.impl.AbstractJooqDao;
 import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
-import io.cattle.platform.servicediscovery.service.ServiceLookup;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,10 +37,10 @@ public class AgentServiceLookup extends AbstractJooqDao implements ServiceLookup
                 SERVICE.REMOVED, null);
         List<Service> svcsToReconcile = new ArrayList<>();
         for (Service service : allServices) {
-            if (!sdService.isActiveService(service)) {
+            if (!ServiceUtil.isActiveService(service)) {
                 continue;
             }
-            if (sdService.isGlobalService(service) || sdService.isScalePolicyService(service)) {
+            if (ServiceUtil.isGlobalService(service) || sdService.isScalePolicyService(service)) {
                 svcsToReconcile.add(service);
             }
         }
