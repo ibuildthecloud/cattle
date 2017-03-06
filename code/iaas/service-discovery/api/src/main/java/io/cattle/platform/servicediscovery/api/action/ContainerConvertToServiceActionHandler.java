@@ -73,9 +73,6 @@ public class ContainerConvertToServiceActionHandler implements ActionHandler {
                 ConvertToServiceInput.class);
         String serviceName = input.getName();
         Long stackId = instance.getStackId();
-        if (input.getStackId() != null) {
-            stackId = Long.valueOf(input.getStackId());
-        }
         if (!objMgr.find(Service.class, SERVICE.ACCOUNT_ID, instance.getAccountId(), SERVICE.NAME, serviceName,
                 SERVICE.STACK_ID, stackId).isEmpty()) {
             ValidationErrorCodes.throwValidationError(ValidationErrorCodes.NOT_UNIQUE,
@@ -88,6 +85,11 @@ public class ContainerConvertToServiceActionHandler implements ActionHandler {
         for (Instance sec : instances) {
             if (sec.getId().equals(instance.getId())) {
                 continue;
+            }
+            if (!instance.getStackId().equals(stackId)) {
+                ValidationErrorCodes.throwValidationError(ValidationErrorCodes.INVALID_OPTION,
+                        "Sidekick container uuid " + instance.getUuid()
+                                + " belongs to a different stack, can't convert");
             }
             if (sec.getName() == null) {
                 ValidationErrorCodes.throwValidationError(ValidationErrorCodes.INVALID_OPTION,
