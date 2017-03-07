@@ -474,7 +474,7 @@ public class MetaDataInfoDaoImpl extends AbstractJooqDao implements MetaDataInfo
                                 String stackUUID = record.getValue(STACK.UUID);
 
                                 List<String> launchConfigNames = ServiceUtil
-                                        .getServiceLaunchConfigNames(service);
+                                        .getLaunchConfigNames(service);
                                 if (launchConfigNames.isEmpty()) {
                                     launchConfigNames.add(ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME);
                                 }

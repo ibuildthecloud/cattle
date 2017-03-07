@@ -105,7 +105,7 @@ public class ServiceExposeMapDaoImpl extends AbstractJooqDao implements ServiceE
                                 InstanceConstants.STATE_ERROR, InstanceConstants.STATE_ERRORING))
                         .and(SERVICE_EXPOSE_MAP.DNS_PREFIX.isNull().or(
                                 SERVICE_EXPOSE_MAP.DNS_PREFIX.in(ServiceUtil
-                                        .getServiceLaunchConfigNames(service)))))
+                                        .getLaunchConfigNames(service)))))
                 .fetchInto(InstanceRecord.class);
     }
 
@@ -122,7 +122,7 @@ public class ServiceExposeMapDaoImpl extends AbstractJooqDao implements ServiceE
                                 CommonStatesConstants.ACTIVE, CommonStatesConstants.REQUESTED))
                                 .and(SERVICE_EXPOSE_MAP.DNS_PREFIX.isNull().or(
                                 SERVICE_EXPOSE_MAP.DNS_PREFIX.in(ServiceUtil
-                                        .getServiceLaunchConfigNames(service)))))
+                                        .getLaunchConfigNames(service)))))
                 .fetchInto(InstanceRecord.class);
     }
 
@@ -154,7 +154,7 @@ public class ServiceExposeMapDaoImpl extends AbstractJooqDao implements ServiceE
                                 CommonStatesConstants.ACTIVE, CommonStatesConstants.REQUESTED))
                         .and(exposeMap.DNS_PREFIX.isNull().or(
                                 exposeMap.DNS_PREFIX.in(ServiceUtil
-                                        .getServiceLaunchConfigNames(service))))
+                                        .getLaunchConfigNames(service))))
                 .fetch().map(mapper);
     }
 

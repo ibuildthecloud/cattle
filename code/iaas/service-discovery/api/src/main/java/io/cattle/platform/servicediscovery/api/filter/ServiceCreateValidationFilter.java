@@ -520,7 +520,7 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
                 continue;
             }
             usedNames.add(existingSvc.getName().toLowerCase());
-            for (String usedLcName : ServiceUtil.getServiceLaunchConfigNames(existingSvc)) {
+            for (String usedLcName : ServiceUtil.getLaunchConfigNames(existingSvc)) {
                 usedNames.add(usedLcName.toLowerCase());
             }
         }

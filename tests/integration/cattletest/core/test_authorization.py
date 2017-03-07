@@ -1072,6 +1072,7 @@ def test_container_auth(admin_user_client, user_client, project_client,
         'sidekickTo': 'r',
         'metadata': 'r',
         'exitCode': 'r',
+        'prePullOnUpgrade': 'r',
     })
 
     auth_check(user_client.schema, 'container', 'r', {
@@ -1184,6 +1185,7 @@ def test_container_auth(admin_user_client, user_client, project_client,
         'sidekickTo': 'r',
         'metadata': 'r',
         'exitCode': 'r',
+        'prePullOnUpgrade': 'r',
     })
 
     auth_check(project_client.schema, 'container', 'crud', {
@@ -1296,6 +1298,7 @@ def test_container_auth(admin_user_client, user_client, project_client,
         'sidekickTo': 'cr',
         'metadata': 'cru',
         'exitCode': 'r',
+        'prePullOnUpgrade': 'cru',
     })
 
     auth_check(environment_client.schema, 'container', 'crud', {
@@ -1407,6 +1410,7 @@ def test_container_auth(admin_user_client, user_client, project_client,
         'sidekickTo': 'cr',
         'metadata': 'cru',
         'exitCode': 'r',
+        'prePullOnUpgrade': 'cru',
     })
 
     auth_check(project_admin_client.schema, 'container', 'crud', {
@@ -1518,6 +1522,7 @@ def test_container_auth(admin_user_client, user_client, project_client,
         'sidekickTo': 'cr',
         'metadata': 'cru',
         'exitCode': 'r',
+        'prePullOnUpgrade': 'cru',
     })
 
     auth_check(project_client.schema, 'dockerBuild', 'cr', {
@@ -2150,8 +2155,7 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'intervalMillis': 'r',
         'startFirst': 'r',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'r',
+        'previousRevisionId': 'r'
     })
 
     auth_check(user_client.schema, 'service', 'r', {
@@ -2184,8 +2188,7 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'intervalMillis': 'r',
         'startFirst': 'r',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'r',
+        'previousRevisionId': 'r'
     })
 
     auth_check(project_client.schema, 'service', 'crud', {
@@ -2218,8 +2221,7 @@ def test_svc_discovery_service(admin_user_client, user_client, project_client,
         'intervalMillis': 'cru',
         'startFirst': 'cru',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'cru',
+        'previousRevisionId': 'r'
     })
 
     resource_action_check(user_client.schema, 'service', [
@@ -2501,8 +2503,7 @@ def test_svc_discovery_lb_service(admin_user_client, user_client,
         'intervalMillis': 'r',
         'startFirst': 'r',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'r',
+        'previousRevisionId': 'r'
     })
 
     auth_check(user_client.schema, 'loadBalancerService', 'r', {
@@ -2532,8 +2533,7 @@ def test_svc_discovery_lb_service(admin_user_client, user_client,
         'intervalMillis': 'r',
         'startFirst': 'r',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'r',
+        'previousRevisionId': 'r'
     })
 
     auth_check(project_client.schema, 'loadBalancerService', 'crud', {
@@ -2563,8 +2563,7 @@ def test_svc_discovery_lb_service(admin_user_client, user_client,
         'intervalMillis': 'cru',
         'startFirst': 'cru',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'cru',
+        'previousRevisionId': 'r'
     })
 
 
@@ -2771,8 +2770,7 @@ def test_svc_discovery_external_service(admin_user_client, user_client,
         'linkedServices': 'r',
         'system': 'r',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'r',
+        'previousRevisionId': 'r'
     })
 
     auth_check(user_client.schema, 'externalService', 'r', {
@@ -2793,8 +2791,7 @@ def test_svc_discovery_external_service(admin_user_client, user_client,
         'linkedServices': 'r',
         'system': 'r',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'r',
+        'previousRevisionId': 'r'
     })
 
     auth_check(project_client.schema, 'externalService', 'crud', {
@@ -2815,8 +2812,7 @@ def test_svc_discovery_external_service(admin_user_client, user_client,
         'linkedServices': 'r',
         'system': 'r',
         'revisionId': 'r',
-        'previousRevisionId': 'r',
-        'prePullOnUpgrade': 'cru',
+        'previousRevisionId': 'r'
     })
 
 

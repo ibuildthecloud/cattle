@@ -368,7 +368,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
             return;
         }
         List<GenericObject> waitList = new ArrayList<>();
-        for (String image : ServiceUtil.getServiceImages(service)) {
+        for (String image : ServiceUtil.getServiceImagesToPrePull(service)) {
             GenericObject pullTask = getPullTask(revisionId, service.getAccountId());
             if (pullTask != null) {
                 if (pullTask.getState().equalsIgnoreCase(CommonStatesConstants.ACTIVE)) {

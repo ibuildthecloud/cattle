@@ -44,7 +44,7 @@ public class ServiceUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<String> getServiceLaunchConfigNames(Service service) {
+    public static List<String> getLaunchConfigNames(Service service) {
         Map<String, Object> originalData = new HashMap<>();
         originalData.putAll(DataUtils.getFields(service));
         List<String> launchConfigNames = new ArrayList<>();
@@ -594,14 +594,16 @@ public class ServiceUtil {
                 intervalMillis, batchSize);
     }
     
-    public static final List<String> getServiceImages(Service service) {
+    public static final List<String> getServiceImagesToPrePull(Service service) {
         List<String> images = new ArrayList<>();
-        for (String lcName : getServiceLaunchConfigNames(service)) {
+        for (String lcName : getLaunchConfigNames(service)) {
             Object imageUUID = getLaunchConfigObject(service, lcName, InstanceConstants.FIELD_IMAGE_UUID);
             if (imageUUID == null) {
                 continue;
             }
-            images.add(imageUUID.toString());
+            if (isImagePrePullOnLaunchConfig(service, lcName)) {
+                images.add(imageUUID.toString());
+            }
         }
         return images;
     }
@@ -650,7 +652,7 @@ public class ServiceUtil {
 
     @SuppressWarnings("unchecked")
     public static Map<String, String> getMergedServiceLabels(Service service) {
-        List<String> launchConfigNames = ServiceUtil.getServiceLaunchConfigNames(service);
+        List<String> launchConfigNames = ServiceUtil.getLaunchConfigNames(service);
         Map<String, String> labelsStr = new HashMap<>();
         for (String currentLaunchConfigName : launchConfigNames) {
             Map<String, Object> data = getLaunchConfigDataAsMap(service, currentLaunchConfigName);
@@ -667,5 +669,22 @@ public class ServiceUtil {
         Map<String, String> serviceLabels = getMergedServiceLabels(service);
         String globalService = serviceLabels.get(ServiceConstants.LABEL_SERVICE_GLOBAL);
         return Boolean.valueOf(globalService);
+    }
+
+    public static boolean isImagePrePull(Service service) {
+        for (String lc : ServiceUtil.getLaunchConfigNames(service)) {
+            if (isImagePrePullOnLaunchConfig(service, lc)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isImagePrePullOnLaunchConfig(Service service, String lc) {
+        Object prePull = ServiceUtil.getLaunchConfigObject(service, lc, ServiceConstants.FIELD_IMAGE_PRE_PULL);
+        if (prePull != null && Boolean.valueOf(prePull.toString())) {
+            return true;
+        }
+        return false;
     }
 }

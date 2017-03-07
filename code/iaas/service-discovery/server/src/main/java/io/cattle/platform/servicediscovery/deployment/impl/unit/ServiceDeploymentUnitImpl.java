@@ -75,7 +75,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
         this.stack = context.objectManager.findOne(Stack.class, STACK.ID, service.getStackId());
         this.labels = DataAccessor.fields(unit).withKey(InstanceConstants.FIELD_LABELS)
                 .withDefault(Collections.EMPTY_MAP).as(Map.class);
-        this.launchConfigNames = ServiceUtil.getServiceLaunchConfigNames(service);
+        this.launchConfigNames = ServiceUtil.getLaunchConfigNames(service);
         collectDeploymentUnitInstances();
         generateSidekickReferences();
     }

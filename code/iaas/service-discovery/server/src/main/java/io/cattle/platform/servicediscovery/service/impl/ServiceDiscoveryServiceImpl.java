@@ -258,7 +258,7 @@ public class ServiceDiscoveryServiceImpl implements ServiceDiscoveryService {
     @SuppressWarnings("unchecked")
     protected List<PooledResource> allocatePorts(Account env, Service service) {
         int toAllocate = 0;
-        for (String launchConfigName : ServiceUtil.getServiceLaunchConfigNames(service)) {
+        for (String launchConfigName : ServiceUtil.getLaunchConfigNames(service)) {
             Object ports = ServiceUtil.getLaunchConfigObject(service, launchConfigName,
                     InstanceConstants.FIELD_PORTS);
             if (ports != null) {
@@ -690,7 +690,7 @@ public class ServiceDiscoveryServiceImpl implements ServiceDiscoveryService {
                 scale = policy.getMin();
             }
 
-            List<String> lcs = ServiceUtil.getServiceLaunchConfigNames(service);
+            List<String> lcs = ServiceUtil.getLaunchConfigNames(service);
             Integer expectedScale = scale * lcs.size();
             boolean isGlobal = ServiceUtil.isGlobalService(service);
             int healthyCount = 0;

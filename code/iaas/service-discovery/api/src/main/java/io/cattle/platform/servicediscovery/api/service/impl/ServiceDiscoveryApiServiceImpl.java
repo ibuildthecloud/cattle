@@ -165,7 +165,7 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
                 TransformerUtils.invokerTransformer("getId"));
         Map<String, Object> volumesData = new HashMap<String, Object>();
         for (Service service : servicesToExport) {
-            List<String> launchConfigNames = ServiceUtil.getServiceLaunchConfigNames(service);
+            List<String> launchConfigNames = ServiceUtil.getLaunchConfigNames(service);
             for (String launchConfigName : launchConfigNames) {
                 boolean isPrimaryConfig = launchConfigName
                         .equals(ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME);
@@ -533,7 +533,7 @@ public class ServiceDiscoveryApiServiceImpl implements ServiceDiscoveryApiServic
     @SuppressWarnings("unchecked")
     protected void populateSidekickLabels(Service service, Map<String, Object> composeServiceData, boolean isPrimary) {
         List<? extends String> configs = ServiceUtil
-                .getServiceLaunchConfigNames(service);
+                .getLaunchConfigNames(service);
         configs.remove(ServiceConstants.PRIMARY_LAUNCH_CONFIG_NAME);
         StringBuilder sidekicks = new StringBuilder();
         for (String config : configs) {
