@@ -1,7 +1,4 @@
-package io.cattle.platform.servicediscovery.api.service.impl;
-
-import io.cattle.platform.servicediscovery.api.resource.ServiceDiscoveryConfigItem;
-import io.cattle.platform.servicediscovery.api.service.RancherConfigToComposeFormatter;
+package io.cattle.platform.servicediscovery.api.export.impl;
 
 import javax.inject.Named;
 

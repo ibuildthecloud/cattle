@@ -1,4 +1,4 @@
-package io.cattle.platform.servicediscovery.api.resource;
+package io.cattle.platform.servicediscovery.api.export.impl;
 
 import io.cattle.platform.core.constants.InstanceConstants;
 import io.cattle.platform.core.constants.LoadBalancerConstants;

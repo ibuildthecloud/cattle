@@ -3527,7 +3527,8 @@ def test_error_state(new_context):
     # validate c2 was recreated as a part of the same deployment unit
     _validate_id_not_equal(client, service, stack, "1",
                            c1.id, c1.deploymentUnitUuid)
-    v1 = client.reload(v1)
+
+    wait_for(lambda: client.reload(v1).state == 'inactive')
     assert v1.state == 'inactive'
 
 

@@ -314,4 +314,14 @@ public class ServiceConsumeMapDaoImpl extends AbstractJooqDao implements Service
 
         return result;
     }
+
+    @Override
+    public void removeServiceLink(Service service, ServiceLink serviceLink) {
+        ServiceConsumeMap map = findMapToRemove(service.getId(), serviceLink.getServiceId());
+
+        if (map != null) {
+            objectProcessManager.scheduleProcessInstance(ServiceConstants.PROCESS_SERVICE_CONSUME_MAP_REMOVE,
+                    map, null);
+        }
+    }
 }

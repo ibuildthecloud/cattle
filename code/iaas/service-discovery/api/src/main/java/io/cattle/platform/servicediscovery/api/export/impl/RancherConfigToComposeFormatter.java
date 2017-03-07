@@ -1,6 +1,5 @@
-package io.cattle.platform.servicediscovery.api.service;
+package io.cattle.platform.servicediscovery.api.export.impl;
 
-import io.cattle.platform.servicediscovery.api.resource.ServiceDiscoveryConfigItem;
 
 public interface RancherConfigToComposeFormatter {
     public enum Option {

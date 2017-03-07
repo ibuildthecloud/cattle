@@ -69,4 +69,6 @@ public interface ServiceConsumeMapDao {
     Map<Long, Long> findConsumedServicesIdsToStackIdsFromOtherAccounts(long accountId);
 
     Map<Long, Long> findConsumedByServicesIdsToStackIdsFromOtherAccounts(long accountId);
+
+    void removeServiceLink(Service service, ServiceLink serviceLink);
 }

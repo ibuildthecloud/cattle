@@ -13,7 +13,6 @@ import io.cattle.platform.lock.LockManager;
 import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.servicediscovery.api.lock.ServiceDiscoveryServiceSetLinksLock;
-import io.cattle.platform.servicediscovery.api.service.ServiceDiscoveryApiService;
 import io.github.ibuildthecloud.gdapi.id.IdFormatter;
 import io.github.ibuildthecloud.gdapi.request.ApiRequest;
 import io.github.ibuildthecloud.gdapi.validation.ValidationErrorCodes;
@@ -36,8 +35,6 @@ public class SetServiceLinksActionHandler implements ActionHandler {
     ServiceConsumeMapDao consumeMapDao;
     @Inject
     LockManager lockManager;
-    @Inject
-    ServiceDiscoveryApiService sdService;
     @Inject
     ObjectManager objMgr;
     @Inject
@@ -106,7 +103,7 @@ public class SetServiceLinksActionHandler implements ActionHandler {
 
     private void createNewServiceMaps(Service service, Map<String, ServiceLink> newServiceLinks) {
         for (ServiceLink newServiceLink : newServiceLinks.values()) {
-            sdService.addServiceLink(service, newServiceLink);
+            consumeMapDao.createServiceLink(service, newServiceLink);
         }
     }
 
@@ -122,7 +119,7 @@ public class SetServiceLinksActionHandler implements ActionHandler {
         }
 
         for (ServiceLink linkToRemove : linksToRemove) {
-            sdService.removeServiceLink(service, linkToRemove);
+            consumeMapDao.removeServiceLink(service, linkToRemove);
         }
     }
 }

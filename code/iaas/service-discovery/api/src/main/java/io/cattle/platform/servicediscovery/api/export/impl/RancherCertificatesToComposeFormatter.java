@@ -1,10 +1,8 @@
-package io.cattle.platform.servicediscovery.api.service.impl;
+package io.cattle.platform.servicediscovery.api.export.impl;
 
 import io.cattle.platform.core.model.Certificate;
 import io.cattle.platform.db.jooq.dao.impl.AbstractJooqDao;
 import io.cattle.platform.object.ObjectManager;
-import io.cattle.platform.servicediscovery.api.resource.ServiceDiscoveryConfigItem;
-import io.cattle.platform.servicediscovery.api.service.RancherConfigToComposeFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
