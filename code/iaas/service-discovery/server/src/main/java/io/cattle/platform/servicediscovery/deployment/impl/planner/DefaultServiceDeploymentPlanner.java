@@ -21,29 +21,18 @@ public class DefaultServiceDeploymentPlanner extends AbstractServiceDeploymentPl
             DeploymentManagerContext context) {
         super(service, context, stack);
         // internal desired scale populated by scale policy driven deployment
-        int scale = getCurrentScale(service);
+        int scale = DataAccessor.fieldInteger(service,
+                ServiceConstants.FIELD_SCALE);
 
         if (scale > this.requestedScale) {
             this.requestedScale = scale;
         }
     }
 
-    public int getCurrentScale(Service service) {
-        int scale = 0;
-        Integer scaleInternal = DataAccessor.fieldInteger(service,
-                ServiceConstants.FIELD_DESIRED_SCALE);
-        if (scaleInternal != null) {
-            scale = scaleInternal;
-        } else {
-            scale = DataAccessor.fieldInteger(service,
-                    ServiceConstants.FIELD_SCALE);
-        }
-        return scale;
-    }
-
     @Override
     protected void checkScale() {
-        int scale = getCurrentScale(service);
+        int scale = DataAccessor.fieldInteger(service,
+                ServiceConstants.FIELD_SCALE);
         if (scale != requestedScale) {
             throw new ServiceReconcileException("Need to restart service reconcile");
         }

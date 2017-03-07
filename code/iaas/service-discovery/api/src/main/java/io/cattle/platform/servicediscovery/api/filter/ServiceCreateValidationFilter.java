@@ -2,7 +2,6 @@ package io.cattle.platform.servicediscovery.api.filter;
 
 import static io.cattle.platform.core.model.tables.ServiceTable.*;
 import io.cattle.platform.core.addon.PortRule;
-import io.cattle.platform.core.addon.ScalePolicy;
 import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.constants.InstanceConstants;
 import io.cattle.platform.core.constants.ServiceConstants;
@@ -84,8 +83,6 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
         request = validateAndSetImage(request, service, type);
 
         validatePorts(service, type, request);
-
-        validateScalePolicy(service, request, false);
 
         request = setServiceIndexStrategy(type, request);
 
@@ -213,39 +210,6 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
         }
     }
 
-    protected void validateScalePolicy(Service service, ApiRequest request, boolean forUpdate) {
-        Integer scale = DataUtils.getFieldFromRequest(request,
-                ServiceConstants.FIELD_SCALE,
-                Integer.class);
-        if (scale == null && forUpdate) {
-            scale = DataAccessor.fieldInteger(service, ServiceConstants.FIELD_SCALE);
-        }
-
-        if (scale == null) {
-            return;
-        }
-
-        Object policyObj = DataUtils.getFieldFromRequest(request,
-                ServiceConstants.FIELD_SCALE_POLICY,
-                Object.class);
-        ScalePolicy policy = null;
-        if (policyObj != null) {
-            policy = jsonMapper.convertValue(policyObj,
-                    ScalePolicy.class);
-        } else if (forUpdate) {
-            policy = DataAccessor.field(service,
-                    ServiceConstants.FIELD_SCALE_POLICY, jsonMapper, ScalePolicy.class);
-        }
-        if (policy == null) {
-            return;
-        }
-
-        if (policy.getMin().intValue() > policy.getMax().intValue()) {
-            throw new ValidationErrorException(ValidationErrorCodes.MAX_LIMIT_EXCEEDED,
-                    "Min scale can't exceed scale");
-        }
-    }
-
     protected void validateSelector(ApiRequest request) {
         String selectorContainer = DataUtils.getFieldFromRequest(request,
                 ServiceConstants.FIELD_SELECTOR_CONTAINER,
@@ -351,7 +315,6 @@ public class ServiceCreateValidationFilter extends AbstractDefaultResourceManage
         validateLaunchConfigs(service, request);
         validateSelector(request);
         validateLbConfig(request, type);
-        validateScalePolicy(service, request, true);
         validatePorts(service, type, request);
         request = setForUpgrade(service, request);
 

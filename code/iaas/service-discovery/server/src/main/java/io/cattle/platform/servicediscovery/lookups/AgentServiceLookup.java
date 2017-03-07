@@ -40,7 +40,7 @@ public class AgentServiceLookup extends AbstractJooqDao implements ServiceLookup
             if (!ServiceUtil.isActiveService(service)) {
                 continue;
             }
-            if (ServiceUtil.isGlobalService(service) || sdService.isScalePolicyService(service)) {
+            if (ServiceUtil.isGlobalService(service)) {
                 svcsToReconcile.add(service);
             }
         }

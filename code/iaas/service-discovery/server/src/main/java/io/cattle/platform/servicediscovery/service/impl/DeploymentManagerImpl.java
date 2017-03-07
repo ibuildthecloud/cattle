@@ -8,9 +8,7 @@ import io.cattle.platform.configitem.events.ConfigUpdate;
 import io.cattle.platform.configitem.model.Client;
 import io.cattle.platform.configitem.request.ConfigUpdateRequest;
 import io.cattle.platform.configitem.version.ConfigItemStatusManager;
-import io.cattle.platform.core.addon.ScalePolicy;
 import io.cattle.platform.core.constants.CommonStatesConstants;
-import io.cattle.platform.core.constants.ServiceConstants;
 import io.cattle.platform.core.dao.HostDao;
 import io.cattle.platform.core.dao.ServiceDao;
 import io.cattle.platform.core.dao.ServiceExposeMapDao;
@@ -28,7 +26,6 @@ import io.cattle.platform.object.ObjectManager;
 import io.cattle.platform.object.process.ObjectProcessManager;
 import io.cattle.platform.object.process.StandardProcess;
 import io.cattle.platform.object.resource.ResourceMonitor;
-import io.cattle.platform.object.util.DataAccessor;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitManager;
 import io.cattle.platform.servicediscovery.deployment.ServiceDeploymentPlanner;
 import io.cattle.platform.servicediscovery.deployment.impl.lock.ServiceLock;
@@ -36,24 +33,17 @@ import io.cattle.platform.servicediscovery.deployment.impl.planner.ServiceDeploy
 import io.cattle.platform.servicediscovery.service.DeploymentManager;
 import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
 import io.cattle.platform.servicediscovery.upgrade.UpgradeManager;
-import io.cattle.platform.util.exception.DeploymentUnitAllocateException;
 import io.cattle.platform.util.exception.ServiceReconcileException;
 import io.github.ibuildthecloud.gdapi.id.IdFormatter;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DeploymentManagerImpl implements DeploymentManager {
 
     private static final String RECONCILE = "reconcile";
-    private static final Logger log = LoggerFactory.getLogger(DeploymentManagerImpl.class);
     @Inject
     ActivityService activitySvc;
     @Inject
@@ -118,125 +108,9 @@ public class DeploymentManagerImpl implements DeploymentManager {
                 }
 
                 objectMgr.setFields(service, SERVICE.SKIP, false);
-                return reconcileDeployment(service, checkState, scheduleOnly);
+                return deploy(service, checkState, scheduleOnly);
             }
         });
-    }
-
-    protected boolean reconcileDeployment(final Service service, final boolean checkState, boolean scheduleOnly) {
-        ScalePolicy policy = DataAccessor.field(service,
-                ServiceConstants.FIELD_SCALE_POLICY, mapper, ScalePolicy.class);
-        boolean result = false;
-        if (policy == null) {
-            result = deploy(service, checkState, scheduleOnly);
-        } else {
-            result = deployWithScaleAdjustement(service, checkState, policy);
-        }
-        return result;
-    }
-
-    protected boolean deployWithScaleAdjustement(final Service service, final boolean checkState,
-            ScalePolicy policy) {
-
-        Integer desiredScaleToReset = null;
-        Integer desiredScaleSet = DataAccessor.fieldInteger(service,
-                ServiceConstants.FIELD_DESIRED_SCALE);
-        if (desiredScaleSet == null) {
-            desiredScaleToReset = policy.getMin();
-        } else if (desiredScaleSet.intValue() > policy.getMax().intValue()) {
-            desiredScaleToReset = policy.getMax();
-        }
-
-        boolean initLockScale = false;
-        if (DataAccessor.fieldInteger(service,
-                ServiceConstants.FIELD_LOCKED_SCALE) == null) {
-            initLockScale = true;
-        }
-
-        if (desiredScaleToReset != null) {
-            initLockScale = true;
-            desiredScaleToReset = setDesiredScaleInternal(service, desiredScaleToReset);
-            log.info("Set service [{}] desired scale to [{}]", service.getUuid(), desiredScaleToReset);
-        }
-
-        if (initLockScale) {
-            lockScale(service);
-        }
-
-        return incremenetScaleAndDeploy(service, checkState, policy);
-    }
-
-    protected boolean incremenetScaleAndDeploy(final Service service, final boolean checkState,
-            ScalePolicy policy) {
-        Integer desiredScale = DataAccessor.fieldInteger(service,
-                ServiceConstants.FIELD_DESIRED_SCALE);
-        try {
-            deploy(service, checkState, false);
-            lockScale(service);
-        } catch (DeploymentUnitAllocateException ex) {
-            reduceScaleAndDeploy(service, checkState, policy);
-            return false;
-        }
-        if (desiredScale.intValue() < policy.getMax().intValue()) {
-            Integer newDesiredScale = policy.getMax() - desiredScale < policy.getIncrement().intValue() ? policy
-                    .getMax()
-                    : desiredScale
-                            + policy.getIncrement();
-            desiredScale = setDesiredScaleInternal(service, newDesiredScale);
-            log.info("Incremented service [{}] scale to [{}] as reconcile has succeed", service.getUuid(),
-                    desiredScale);
-            incremenetScaleAndDeploy(service, checkState, policy);
-        }
-
-        return false;
-    }
-
-    protected boolean reduceScaleAndDeploy(Service service, boolean checkState, ScalePolicy policy) {
-        int desiredScale = DataAccessor.fieldInteger(service, ServiceConstants.FIELD_DESIRED_SCALE).intValue();
-        int lockedScale = DataAccessor.fieldInteger(service, ServiceConstants.FIELD_LOCKED_SCALE).intValue();
-        int minScale = policy.getMin();
-        // account for the fact that scale policy can be updated
-        if (lockedScale > policy.getMin().intValue()) {
-            minScale = lockedScale;
-        }
-        if (lockedScale >= policy.getMax().intValue()) {
-            minScale = policy.getMax();
-        }
-
-        int increment = policy.getIncrement().intValue();
-        if (desiredScale >= minScale) {
-            // reduce scale by interval and try to deploy again
-            Integer newDesiredScale = desiredScale - increment <= minScale ? minScale : desiredScale
-                    - policy.getIncrement();
-            desiredScale = setDesiredScaleInternal(service, newDesiredScale);
-            log.info("Decremented service [{}] scale to [{}] as reconcile has failed", service.getUuid(), desiredScale);
-            try {
-                deploy(service, checkState, false);
-            } catch (DeploymentUnitAllocateException ex) {
-                if (desiredScale == minScale) {
-                    throw ex;
-                }
-                reduceScaleAndDeploy(service, checkState, policy);
-            }
-        }
-        return false;
-    }
-
-    protected Integer setDesiredScaleInternal(Service service, Integer newScale) {
-        service = objectMgr.reload(service);
-        Map<String, Object> data = new HashMap<>();
-        data.put(ServiceConstants.FIELD_DESIRED_SCALE, newScale);
-        objectMgr.setFields(service, data);
-        return newScale;
-    }
-
-    protected void lockScale(Service service) {
-        Integer desiredScale = DataAccessor.fieldInteger(service,
-                ServiceConstants.FIELD_DESIRED_SCALE);
-        service = objectMgr.reload(service);
-        Map<String, Object> data = new HashMap<>();
-        data.put(ServiceConstants.FIELD_LOCKED_SCALE, desiredScale);
-        objectMgr.setFields(service, data);
     }
 
     protected boolean deploy(final Service service, final boolean checkState, boolean scheduleOnly) {

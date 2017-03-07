@@ -40,8 +40,6 @@ public interface ServiceDiscoveryService extends AnnotatedEventListener {
 
     boolean isSelectorContainerMatch(String selector, Instance instance);
 
-    boolean isScalePolicyService(Service service);
-
     /**
      * ENDPOINTS UPDATE
      */

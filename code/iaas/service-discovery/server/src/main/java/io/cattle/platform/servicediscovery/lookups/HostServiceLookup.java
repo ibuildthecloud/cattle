@@ -1,6 +1,5 @@
 package io.cattle.platform.servicediscovery.lookups;
 
-import static io.cattle.platform.core.model.tables.ServiceTable.*;
 import io.cattle.platform.core.dao.ServiceDao;
 import io.cattle.platform.core.model.Host;
 import io.cattle.platform.core.model.Service;
@@ -33,15 +32,6 @@ public class HostServiceLookup implements ServiceLookup {
         List<Service> services = new ArrayList<>();
         // add all services on host
         services.addAll(svcDao.getServicesOnHost(host.getId()));
-
-        // add all services with scale policy
-        List<? extends Service> allServices = objMgr.find(Service.class, SERVICE.ACCOUNT_ID, host.getAccountId(),
-                SERVICE.REMOVED, null);
-        for (Service service : allServices) {
-            if (sdService.isScalePolicyService(service)) {
-                services.add(service);
-            }
-        }
 
         return services;
     }

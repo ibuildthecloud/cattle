@@ -57,7 +57,7 @@ public class GlobalHostActivateServiceLookup implements ServiceLookup {
         List<? extends Service> services = expMapDao.getActiveServices(accountId);
         List<Service> activeGlobalServices = new ArrayList<Service>();
         for (Service service : services) {
-            if (ServiceUtil.isGlobalService(service) || sdSvc.isScalePolicyService(service)) {
+            if (ServiceUtil.isGlobalService(service)) {
                 activeGlobalServices.add(service);
             }
         }

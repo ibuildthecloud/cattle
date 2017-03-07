@@ -15,7 +15,6 @@ import io.cattle.platform.configitem.version.ConfigItemStatusManager;
 import io.cattle.platform.core.addon.LbConfig;
 import io.cattle.platform.core.addon.PortRule;
 import io.cattle.platform.core.addon.PublicEndpoint;
-import io.cattle.platform.core.addon.ScalePolicy;
 import io.cattle.platform.core.addon.ServiceLink;
 import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.constants.HealthcheckConstants;
@@ -684,11 +683,6 @@ public class ServiceDiscoveryServiceImpl implements ServiceDiscoveryService {
             if (scale == null || ServiceUtil.isNoopService(service)) {
                 scale = 0;
             }
-            ScalePolicy policy = DataAccessor.field(service,
-                    ServiceConstants.FIELD_SCALE_POLICY, jsonMapper, ScalePolicy.class);
-            if (policy != null) {
-                scale = policy.getMin();
-            }
 
             List<String> lcs = ServiceUtil.getLaunchConfigNames(service);
             Integer expectedScale = scale * lcs.size();
@@ -751,12 +745,6 @@ public class ServiceDiscoveryServiceImpl implements ServiceDiscoveryService {
 
     protected void publishEvent(Object obj) {
         ObjectUtils.publishChanged(eventService, objectManager, obj);
-    }
-
-    @Override
-    public boolean isScalePolicyService(Service service) {
-        return DataAccessor.field(service,
-                ServiceConstants.FIELD_SCALE_POLICY, jsonMapper, ScalePolicy.class) != null;
     }
 
     @Override
