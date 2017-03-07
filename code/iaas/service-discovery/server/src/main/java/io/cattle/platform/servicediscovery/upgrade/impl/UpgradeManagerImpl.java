@@ -4,13 +4,10 @@ import static io.cattle.platform.core.model.tables.GenericObjectTable.*;
 import static io.cattle.platform.core.model.tables.ServiceExposeMapTable.*;
 import io.cattle.platform.activity.ActivityLog;
 import io.cattle.platform.activity.ActivityService;
-import io.cattle.platform.allocator.service.AllocationHelper;
 import io.cattle.platform.core.addon.InServiceUpgradeStrategy;
 import io.cattle.platform.core.addon.RollingRestartStrategy;
-import io.cattle.platform.core.addon.ServiceLink;
 import io.cattle.platform.core.addon.ServiceRestart;
 import io.cattle.platform.core.addon.ServiceUpgradeStrategy;
-import io.cattle.platform.core.addon.ToServiceUpgradeStrategy;
 import io.cattle.platform.core.constants.CommonStatesConstants;
 import io.cattle.platform.core.constants.GenericObjectConstants;
 import io.cattle.platform.core.constants.HealthcheckConstants;
@@ -23,7 +20,6 @@ import io.cattle.platform.core.model.DeploymentUnit;
 import io.cattle.platform.core.model.GenericObject;
 import io.cattle.platform.core.model.Instance;
 import io.cattle.platform.core.model.Service;
-import io.cattle.platform.core.model.ServiceConsumeMap;
 import io.cattle.platform.core.model.ServiceExposeMap;
 import io.cattle.platform.core.util.ServiceUtil;
 import io.cattle.platform.engine.process.ExitReason;
@@ -42,7 +38,6 @@ import io.cattle.platform.process.common.util.ProcessUtils;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitManager;
 import io.cattle.platform.servicediscovery.deployment.impl.lock.ServiceLock;
 import io.cattle.platform.servicediscovery.service.DeploymentManager;
-import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
 import io.cattle.platform.servicediscovery.upgrade.UpgradeManager;
 
 import java.util.ArrayList;
@@ -79,8 +74,6 @@ public class UpgradeManagerImpl implements UpgradeManager {
     @Inject
     ResourceMonitor resourceMntr;
     @Inject
-    ServiceDiscoveryService serviceDiscoveryService;
-    @Inject
     JsonMapper jsonMapper;
     @Inject
     ActivityService activityService;
@@ -90,8 +83,6 @@ public class UpgradeManagerImpl implements UpgradeManager {
     DeploymentUnitManager duMgr;
     @Inject
     ResourceMonitor resourceMtr;
-    @Inject
-    AllocationHelper allocationHelper;
     @Inject
     ServiceConsumeMapDao consumeMapDao;
 
@@ -323,16 +314,8 @@ public class UpgradeManagerImpl implements UpgradeManager {
     }
 
     @Override
-    public void upgrade(Service service, io.cattle.platform.core.addon.ServiceUpgradeStrategy strategy,
+    public void upgrade(Service service, io.cattle.platform.core.addon.InServiceUpgradeStrategy strategy,
             String currentProcess, boolean sleep, boolean prepullImages) {
-        if (strategy instanceof ToServiceUpgradeStrategy) {
-            ToServiceUpgradeStrategy toServiceStrategy = (ToServiceUpgradeStrategy) strategy;
-            Service toService = objectManager.loadResource(Service.class, toServiceStrategy.getToServiceId());
-            if (toService == null || toService.getRemoved() != null) {
-                return;
-            }
-            updateLinks(service, toServiceStrategy);
-        }
         while (!doUpgrade(service, strategy, currentProcess, prepullImages)) {
             if (sleep) {
                 sleep(service, strategy, currentProcess);
@@ -341,11 +324,8 @@ public class UpgradeManagerImpl implements UpgradeManager {
     }
 
     @Override
-    public void rollback(Service service, ServiceUpgradeStrategy strategy) {
-        if (strategy instanceof ToServiceUpgradeStrategy) {
-            return;
-        }
-        while (!doInServiceUpgrade(service, (InServiceUpgradeStrategy) strategy, false,
+    public void rollback(Service service, InServiceUpgradeStrategy strategy) {
+        while (!doInServiceUpgrade(service, strategy, false,
                 ServiceConstants.STATE_ROLLINGBACK)) {
             sleep(service, strategy, ServiceConstants.STATE_ROLLINGBACK);
         }
@@ -395,29 +375,15 @@ public class UpgradeManagerImpl implements UpgradeManager {
         }
     }
 
-    public boolean doUpgrade(Service service, io.cattle.platform.core.addon.ServiceUpgradeStrategy strategy,
+    public boolean doUpgrade(Service service, InServiceUpgradeStrategy strategy,
             String currentProcess, boolean prepullImages) {
         if (prepullImages) {
             prepullImages(service);
         }
 
-        if (strategy instanceof InServiceUpgradeStrategy) {
-            InServiceUpgradeStrategy inService = (InServiceUpgradeStrategy) strategy;
-            return doInServiceUpgrade(service, inService, true, currentProcess);
-        } else {
-            ToServiceUpgradeStrategy toService = (ToServiceUpgradeStrategy) strategy;
-            return doToServiceUpgrade(service, toService, currentProcess);
-        }
+        return doInServiceUpgrade(service, strategy, true, currentProcess);
     }
 
-    protected void updateLinks(Service service, ToServiceUpgradeStrategy strategy) {
-        if (!strategy.isUpdateLinks()) {
-            return;
-        }
-
-        cloneConsumingServices(service, objectManager.loadResource(Service.class,
-                strategy.getToServiceId()));
-    }
 
     protected void sleep(final Service service, ServiceUpgradeStrategy strategy, final String currentProcess) {
         final long interval = strategy.getIntervalMillis();
@@ -462,63 +428,6 @@ public class UpgradeManagerImpl implements UpgradeManager {
         }
 
         return service;
-    }
-
-    /**
-     * @param fromService
-     * @param strategy
-     * @return true if the upgrade is done
-     */
-    protected boolean doToServiceUpgrade(Service fromService, ToServiceUpgradeStrategy strategy, String currentProcess) {
-        Service toService = objectManager.loadResource(Service.class, strategy.getToServiceId());
-        if (toService == null || toService.getRemoved() != null) {
-            return true;
-        }
-        deploymentMgr.activate(toService);
-        if (!deploymentMgr.isHealthy(toService)) {
-            return false;
-        }
-
-        deploymentMgr.activate(fromService);
-
-        fromService = objectManager.reload(fromService);
-        toService = objectManager.reload(toService);
-
-        long batchSize = strategy.getBatchSize();
-        long finalScale = strategy.getFinalScale();
-
-        long toScale = getScale(toService);
-        long totalScale = getScale(fromService) + toScale;
-
-        if (totalScale > finalScale) {
-            fromService = changeScale(fromService, 0 - Math.min(batchSize, totalScale - finalScale));
-        } else if (toScale < finalScale) {
-            long max = Math.min(batchSize, finalScale - toScale);
-            toService = changeScale(toService, Math.min(max, finalScale + batchSize - totalScale));
-        }
-
-        if (getScale(fromService) == 0 && getScale(toService) != finalScale) {
-            changeScale(toService, finalScale - getScale(toService));
-        }
-
-        return getScale(fromService) == 0 && getScale(toService) == finalScale;
-    }
-
-    protected Service changeScale(Service service, long delta) {
-        if (delta == 0) {
-            return service;
-        }
-
-        long newScale = Math.max(0, getScale(service) + delta);
-
-        service = objectManager.setFields(service, ServiceConstants.FIELD_SCALE, newScale);
-        deploymentMgr.activate(service);
-        return objectManager.reload(service);
-    }
-
-    protected int getScale(Service service) {
-        Integer i = DataAccessor.fieldInteger(service, ServiceConstants.FIELD_SCALE);
-        return i == null ? 0 : i;
     }
 
     @Override
@@ -708,18 +617,5 @@ public class UpgradeManagerImpl implements UpgradeManager {
                 }
             }
         });
-    }
-
-    protected void cloneConsumingServices(Service fromService, Service toService) {
-        List<ServiceLink> linksToCreate = new ArrayList<>();
-
-        for (ServiceConsumeMap map : consumeMapDao.findConsumingServices(fromService.getId())) {
-            ServiceLink link = new ServiceLink(toService.getId(), map.getName());
-
-            link.setConsumingServiceId(map.getServiceId());
-            linksToCreate.add(link);
-        }
-
-        consumeMapDao.createServiceLinks(linksToCreate);
     }
 }

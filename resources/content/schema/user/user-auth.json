@@ -910,17 +910,11 @@
         "rollingRestartStrategy" : "r",
 
         "serviceUpgrade" : "r",
-        "serviceUpgrade.toServiceStrategy" : "cr",
         "serviceUpgrade.inServiceStrategy" : "cr",
 
         "serviceUpgradeStrategy" : "r",
         "serviceUpgradeStrategy.intervalMillis" : "cr",
         "serviceUpgradeStrategy.batchSize" : "cr",
-
-        "toServiceUpgradeStrategy" : "r",
-        "toServiceUpgradeStrategy.updateLinks" : "cr",
-        "toServiceUpgradeStrategy.toServiceId" : "cr",
-        "toServiceUpgradeStrategy.finalScale" : "cr",
 
         "inServiceUpgradeStrategy" : "r",
         "inServiceUpgradeStrategy.launchConfig" : "cr",

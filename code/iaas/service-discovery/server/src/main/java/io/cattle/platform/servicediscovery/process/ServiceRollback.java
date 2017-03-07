@@ -1,7 +1,7 @@
 package io.cattle.platform.servicediscovery.process;
 
 import io.cattle.platform.activity.ActivityService;
-import io.cattle.platform.core.addon.ServiceUpgradeStrategy;
+import io.cattle.platform.core.addon.InServiceUpgradeStrategy;
 import io.cattle.platform.core.constants.ServiceConstants;
 import io.cattle.platform.core.dao.ServiceDao;
 import io.cattle.platform.core.model.InstanceRevision;
@@ -43,10 +43,10 @@ public class ServiceRollback extends AbstractDefaultProcessHandler {
                 ServiceConstants.FIELD_UPGRADE, jsonMapper,
                 io.cattle.platform.core.addon.ServiceUpgrade.class);
         
-        ServiceUpgradeStrategy strategy = null;
+        InServiceUpgradeStrategy strategy = null;
         boolean finishUpgrade = false;
         if (upgrade != null) {
-            strategy = upgrade.getStrategy();
+            strategy = upgrade.getInServiceStrategy();
             finishUpgrade = true;
         } else if (service.getRevisionId() != null) {
             final io.cattle.platform.core.addon.ServiceRollback rollback = jsonMapper.convertValue(state.getData(),
@@ -68,7 +68,7 @@ public class ServiceRollback extends AbstractDefaultProcessHandler {
             strategy = ServiceUtil.getStrategy(service, currentPreviousRevision, false);
         }
 
-        final ServiceUpgradeStrategy finalStrategy = strategy;
+        final InServiceUpgradeStrategy finalStrategy = strategy;
         final boolean finalFinishUpgrade = finishUpgrade;
 
         if (finalStrategy != null) {

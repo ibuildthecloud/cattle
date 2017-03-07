@@ -191,7 +191,6 @@ def test_user_types(user_client, adds=set(), removes=set()):
         'serviceLink',
         'serviceUpgrade',
         'serviceUpgradeStrategy',
-        'toServiceUpgradeStrategy',
         'inServiceUpgradeStrategy',
         'virtualMachine',
         'virtualMachineDisk',
@@ -446,7 +445,6 @@ def test_admin_types(admin_user_client, adds=set(), removes=set()):
         'secondaryLaunchConfig',
         'serviceLink',
         'serviceUpgradeStrategy',
-        'toServiceUpgradeStrategy',
         'inServiceUpgradeStrategy',
         'publicEndpoint',
         'serviceRestart',
@@ -2632,24 +2630,6 @@ def test_auth_env_upgrade(admin_user_client, user_client,
     })
 
 
-def test_auth_service_upgrade(admin_user_client, user_client,
-                              project_client):
-    auth_check(admin_user_client.schema, 'serviceUpgrade', 'r', {
-        'inServiceStrategy': 'r',
-        'toServiceStrategy': 'r'
-    })
-
-    auth_check(user_client.schema, 'serviceUpgrade', 'r', {
-        'inServiceStrategy': 'r',
-        'toServiceStrategy': 'r'
-    })
-
-    auth_check(project_client.schema, 'serviceUpgrade', 'cr', {
-        'inServiceStrategy': 'cr',
-        'toServiceStrategy': 'cr'
-    })
-
-
 def test_auth_in_service_upgrade_strategy(admin_user_client, user_client,
                                           project_client):
     auth_check(admin_user_client.schema, 'inServiceUpgradeStrategy', 'r', {
@@ -2680,33 +2660,6 @@ def test_auth_in_service_upgrade_strategy(admin_user_client, user_client,
         'previousLaunchConfig': 'r',
         'previousSecondaryLaunchConfigs': 'r',
         'startFirst': 'cr',
-    })
-
-
-def test_auth_to_service_upgrade_strategy(admin_user_client, user_client,
-                                          project_client):
-    auth_check(admin_user_client.schema, 'toServiceUpgradeStrategy', 'r', {
-        'updateLinks': 'r',
-        'toServiceId': 'r',
-        'batchSize': 'r',
-        'intervalMillis': 'r',
-        'finalScale': 'r'
-    })
-
-    auth_check(user_client.schema, 'toServiceUpgradeStrategy', 'r', {
-        'updateLinks': 'r',
-        'toServiceId': 'r',
-        'batchSize': 'r',
-        'intervalMillis': 'r',
-        'finalScale': 'r'
-    })
-
-    auth_check(project_client.schema, 'toServiceUpgradeStrategy', 'cr', {
-        'updateLinks': 'cr',
-        'toServiceId': 'cr',
-        'batchSize': 'cr',
-        'intervalMillis': 'cr',
-        'finalScale': 'cr'
     })
 
 
