@@ -1204,9 +1204,8 @@ def test_sidekick_scaleup(client, context):
     assert service.state == "active"
     assert service.scale == 2
 
-    instance_service_map1 = client. \
-        list_serviceExposeMap(serviceId=service.id, state="active")
-    assert len(instance_service_map1) == 4
+    wait_for(lambda: len(client.
+             list_serviceExposeMap(serviceId=service.id, state="active")) == 4)
 
 
 def _validate_service_instance_map_count(client, service, state, count):
@@ -3680,9 +3679,6 @@ def test_service_pause(client, context):
     svc = svc.activate()
     svc = svc.pause()
     svc = wait_state(client, svc, 'paused')
-    maps = client \
-        .list_serviceExposeMap(serviceId=svc.id)
 
-    assert len(maps) < 10
     svc = client.wait_success(svc.activate())
     assert svc.state == 'active'

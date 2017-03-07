@@ -187,8 +187,14 @@ public abstract class AbstractServiceDeploymentPlanner implements ServiceDeploym
             }
         }
 
+        int counter = 0;
         for (DeploymentUnit unit : units) {
-            checkState();
+            if (counter == 20) {
+                checkState();
+                counter = 0;
+            } else {
+                counter++;
+            }
             context.resourceMonitor.waitFor(unit,
                     new ResourcePredicate<DeploymentUnit>() {
                         @Override
