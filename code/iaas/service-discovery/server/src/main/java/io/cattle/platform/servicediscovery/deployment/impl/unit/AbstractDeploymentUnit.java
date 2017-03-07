@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class DeploymentUnitImpl {
+public abstract class AbstractDeploymentUnit implements io.cattle.platform.servicediscovery.deployment.DeploymentUnit {
     DeploymentUnitManagerContext context;
     Map<String, DeploymentUnitInstance> launchConfigToInstance = new HashMap<>();
     List<String> launchConfigNames = new ArrayList<>();
@@ -21,7 +21,7 @@ public abstract class DeploymentUnitImpl {
     DeploymentUnit unit;
     String uuid;
 
-    public DeploymentUnitImpl(DeploymentUnitManagerContext context, DeploymentUnit unit) {
+    public AbstractDeploymentUnit(DeploymentUnitManagerContext context, DeploymentUnit unit) {
         this.context = context;
         this.uuid = unit.getUuid();
         this.unit = unit;
@@ -29,8 +29,10 @@ public abstract class DeploymentUnitImpl {
     
     protected abstract void createImpl();
 
+    @Override
     public abstract void remove(String reason, String level);
 
+    @Override
     public abstract void cleanup(String reason, String level);
 
     protected abstract void cleanupDependencies();
@@ -39,7 +41,7 @@ public abstract class DeploymentUnitImpl {
 
     protected abstract List<String> getSidekickRefs(String launchConfigName);
     
-    public abstract List<DeploymentUnitInstance> getInstancesWithMistmatchedIndexes();
+    protected abstract List<DeploymentUnitInstance> getInstancesWithMistmatchedIndexes();
 
     protected void sortSidekicks(List<String> sorted, String lc) {
         List<String> sidekicks = getSidekickRefs(lc);
@@ -51,6 +53,7 @@ public abstract class DeploymentUnitImpl {
         }
     }
 
+    @Override
     public void deploy() {
         cleanupInstancesWithMistmatchedIndexes();
         cleanupUnhealthy();
@@ -75,6 +78,7 @@ public abstract class DeploymentUnitImpl {
         return unit;
     }
 
+    @Override
     public boolean isUnhealthy() {
         for (DeploymentUnitInstance instance : this.getDeploymentUnitInstances()) {
             if (instance.isUnhealthy()) {
@@ -84,6 +88,7 @@ public abstract class DeploymentUnitImpl {
         return false;
     }
 
+    @Override
     public void stop() {
         /*
          * stops all instances. This should be non-blocking (don't wait)
@@ -147,6 +152,7 @@ public abstract class DeploymentUnitImpl {
         return this.uuid;
     }
 
+    @Override
     public boolean isHealthCheckInitializing() {
         for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             if (instance.isHealthCheckInitializing()) {
@@ -156,7 +162,7 @@ public abstract class DeploymentUnitImpl {
         return false;
     }
 
-    public boolean isStarted() {
+    protected boolean isStarted() {
         for (DeploymentUnitInstance instance : getDeploymentUnitInstances()) {
             if (!instance.isStarted()) {
                 return false;
@@ -165,10 +171,11 @@ public abstract class DeploymentUnitImpl {
         return true;
     }
 
-    public boolean isComplete() {
+    protected boolean isComplete() {
         return launchConfigToInstance.keySet().containsAll(launchConfigNames);
     }
 
+    @Override
     public String getStatus() {
         return String.format("Healthy: %s, Complete: %s, Started: %s",
                 !isUnhealthy(),
@@ -181,5 +188,11 @@ public abstract class DeploymentUnitImpl {
         for (DeploymentUnitInstance i : toCleanup) {
             removeDeploymentUnitInstance(i, ServiceConstants.AUDIT_LOG_REMOVE_BAD, ActivityLog.INFO);
         }
+    }
+
+    @Override
+    public boolean needToReconcile() {
+        return isUnhealthy() || !isComplete() || !isStarted()
+                || getInstancesWithMistmatchedIndexes().size() > 0;
     }
 }

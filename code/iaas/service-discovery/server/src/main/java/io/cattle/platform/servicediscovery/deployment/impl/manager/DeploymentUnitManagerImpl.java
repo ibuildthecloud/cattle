@@ -25,9 +25,7 @@ import io.cattle.platform.object.process.StandardProcess;
 import io.cattle.platform.object.resource.ResourceMonitor;
 import io.cattle.platform.servicediscovery.deployment.DeploymentUnitManager;
 import io.cattle.platform.servicediscovery.deployment.impl.lock.DeploymentUnitLock;
-import io.cattle.platform.servicediscovery.deployment.impl.unit.DeploymentUnitImpl;
-import io.cattle.platform.servicediscovery.deployment.impl.unit.ServiceDeploymentUnitImpl;
-import io.cattle.platform.servicediscovery.deployment.impl.unit.StandaloneDeploymentUnitImpl;
+import io.cattle.platform.servicediscovery.deployment.impl.unit.ServiceDeploymentUnit;
 import io.cattle.platform.servicediscovery.service.ServiceDiscoveryService;
 import io.cattle.platform.util.exception.DeploymentUnitReconcileException;
 import io.github.ibuildthecloud.gdapi.id.IdFormatter;
@@ -73,13 +71,6 @@ public class DeploymentUnitManagerImpl implements DeploymentUnitManager {
     @Inject
     DockerTransformer dockerTransformer;
 
-    protected DeploymentUnitImpl fetchDeploymentUnit(DeploymentUnit unit, DeploymentUnitManagerContext context) {
-        if (unit.getServiceId() != null) {
-            return new ServiceDeploymentUnitImpl(context, unit);
-        }
-        return new StandaloneDeploymentUnitImpl(context, unit);
-    }
-
     public final class DeploymentUnitManagerContext {
         final public ObjectManager objectManager = objectMgr;
         final public ResourceMonitor resourceMonitor = resourceMntr;
@@ -99,12 +90,12 @@ public class DeploymentUnitManagerImpl implements DeploymentUnitManager {
 
     @Override
     public void deactivate(DeploymentUnit unit) {
-        fetchDeploymentUnit(unit, new DeploymentUnitManagerContext()).stop();
+        DeploymentUnitFactory.fetchDeploymentUnit(unit, new DeploymentUnitManagerContext()).stop();
     }
 
     @Override
     public void remove(DeploymentUnit unit, String reason, String level) {
-        fetchDeploymentUnit(unit, new DeploymentUnitManagerContext()).remove(reason, level);
+        DeploymentUnitFactory.fetchDeploymentUnit(unit, new DeploymentUnitManagerContext()).remove(reason, level);
     }
 
     protected void reconcile(final DeploymentUnit unit) {
@@ -114,12 +105,13 @@ public class DeploymentUnitManagerImpl implements DeploymentUnitManager {
         lockManager.lock(new DeploymentUnitLock(unit), new LockCallbackNoReturn() {
             @Override
             public void doWithLockNoResult() {
-                DeploymentUnitImpl impl = fetchDeploymentUnit(unit, new DeploymentUnitManagerContext());
-                boolean log = impl instanceof ServiceDeploymentUnitImpl;
+                io.cattle.platform.servicediscovery.deployment.DeploymentUnit impl = DeploymentUnitFactory
+                        .fetchDeploymentUnit(unit, new DeploymentUnitManagerContext());
+                boolean log = impl instanceof ServiceDeploymentUnit;
                 if (log) {
                     activitySvc.info(impl.getStatus());
                 }
-                if (!needToReconcile(impl)) {
+                if (!impl.needToReconcile()) {
                     if (log) {
                         activitySvc.info("Deployment unit already reconciled");
                     }
@@ -129,17 +121,12 @@ public class DeploymentUnitManagerImpl implements DeploymentUnitManager {
                 sdSvc.incrementExecutionCount(unit);
                 impl.deploy();
                 // reload in case something has changed
-                impl = fetchDeploymentUnit(unit, new DeploymentUnitManagerContext());
-                if (needToReconcile(impl)) {
+                impl = DeploymentUnitFactory.fetchDeploymentUnit(unit, new DeploymentUnitManagerContext());
+                if (impl.needToReconcile()) {
                     throw new DeploymentUnitReconcileException("Need to restart deployment unit reconcile");
                 }
             }
         });
-    }
-
-    private boolean needToReconcile(DeploymentUnitImpl unit) {
-        return unit.isUnhealthy() || !unit.isComplete() || !unit.isStarted()
-                || unit.getInstancesWithMistmatchedIndexes().size() > 0;
     }
 
     private boolean isActiveUnit(DeploymentUnit unit) {
@@ -200,18 +187,20 @@ public class DeploymentUnitManagerImpl implements DeploymentUnitManager {
 
     @Override
     public boolean isUnhealthy(DeploymentUnit unit) {
-        DeploymentUnitImpl impl = fetchDeploymentUnit(unit, new DeploymentUnitManagerContext());
+        io.cattle.platform.servicediscovery.deployment.DeploymentUnit impl = DeploymentUnitFactory.fetchDeploymentUnit(
+                unit, new DeploymentUnitManagerContext());
         return impl.isUnhealthy();
     }
 
     @Override
     public boolean isInit(DeploymentUnit unit) {
-        DeploymentUnitImpl impl = fetchDeploymentUnit(unit, new DeploymentUnitManagerContext());
+        io.cattle.platform.servicediscovery.deployment.DeploymentUnit impl = DeploymentUnitFactory.fetchDeploymentUnit(
+                unit, new DeploymentUnitManagerContext());
         return impl.isHealthCheckInitializing();
     }
 
     @Override
     public void cleanup(DeploymentUnit unit, String reason, String level) {
-        fetchDeploymentUnit(unit, new DeploymentUnitManagerContext()).cleanup(reason, level);
+        DeploymentUnitFactory.fetchDeploymentUnit(unit, new DeploymentUnitManagerContext()).cleanup(reason, level);
     }
 }

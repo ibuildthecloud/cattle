@@ -43,7 +43,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
+public class ServiceDeploymentUnit extends AbstractDeploymentUnit {
 
     public static class SidekickType {
         public static List<SidekickType> supportedTypes = new ArrayList<>();
@@ -69,7 +69,7 @@ public class ServiceDeploymentUnitImpl extends DeploymentUnitImpl {
     Map<String, ServiceIndex> launchConfigToServiceIndexes = new HashMap<>();
 
     @SuppressWarnings("unchecked")
-    public ServiceDeploymentUnitImpl(DeploymentUnitManagerContext context, DeploymentUnit unit) {
+    public ServiceDeploymentUnit(DeploymentUnitManagerContext context, DeploymentUnit unit) {
         super(context, unit);
         this.service = context.objectManager.findOne(Service.class, SERVICE.ID, unit.getServiceId());
         this.stack = context.objectManager.findOne(Stack.class, STACK.ID, service.getStackId());

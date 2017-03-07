@@ -3529,7 +3529,6 @@ def test_error_state(new_context):
                            c1.id, c1.deploymentUnitUuid)
 
     wait_for(lambda: client.reload(v1).state == 'inactive')
-    assert v1.state == 'inactive'
 
 
 def test_host_remove_error_state(new_context, super_client):

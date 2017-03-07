@@ -24,10 +24,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class StandaloneDeploymentUnitImpl extends DeploymentUnitImpl {
+public class StandaloneDeploymentUnit extends AbstractDeploymentUnit {
     Map<String, Map<String, Object>> instanceIdToInstanceSpec = new HashMap<>();
 
-    public StandaloneDeploymentUnitImpl(DeploymentUnitManagerContext context, DeploymentUnit unit) {
+    public StandaloneDeploymentUnit(DeploymentUnitManagerContext context, DeploymentUnit unit) {
         super(context, unit);
         collectDeploymentUnitInstances();
     }
