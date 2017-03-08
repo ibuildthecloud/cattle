@@ -143,16 +143,6 @@ public abstract class AbstractServiceDeploymentPlanner implements ServiceDeploym
         }
     }
 
-    @Override
-    public boolean isHealthcheckInitiailizing() {
-        for (DeploymentUnit unit : this.allUnits.values()) {
-            if (context.duMgr.isInit(unit)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private DeploymentUnitInstanceIdGenerator getIdGenerator() {
         List<Integer> usedIndexes = new ArrayList<>();
         for (DeploymentUnit du : getAllUnitsList()) {

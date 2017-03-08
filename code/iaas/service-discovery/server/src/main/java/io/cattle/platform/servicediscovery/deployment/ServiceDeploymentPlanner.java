@@ -8,8 +8,6 @@ public interface ServiceDeploymentPlanner {
 
     String getStatus();
 
-    boolean isHealthcheckInitiailizing();
-
     List<DeploymentUnit> deploy();
 
     void deactivateUnits();

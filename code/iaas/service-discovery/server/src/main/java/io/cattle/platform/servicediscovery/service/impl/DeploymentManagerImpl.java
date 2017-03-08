@@ -76,13 +76,8 @@ public class DeploymentManagerImpl implements DeploymentManager {
     UpgradeManager upgradeMgr;
 
     @Override
-    public boolean isHealthy(Service service) {
-        return !activate(service, true, false);
-    }
-
-    @Override
     public void activate(final Service service) {
-        activate(service, false, false);
+        activate(service, false);
     }
 
     /**
@@ -90,13 +85,13 @@ public class DeploymentManagerImpl implements DeploymentManager {
      * @param checkState
      * @return true if this service needs to be reconciled
      */
-    protected boolean activate(final Service service, final boolean checkState, final boolean scheduleOnly) {
+    protected boolean activate(final Service service, final boolean scheduleOnly) {
         // return immediately if inactive
         if (service == null || !ServiceUtil.isActiveService(service)) {
             return false;
         }
 
-        return lockManager.lock(checkState ? null : createLock(service), new LockCallback<Boolean>() {
+        return lockManager.lock(createLock(service), new LockCallback<Boolean>() {
             @Override
             public Boolean doWithLock() {
                 if (!ServiceUtil.isActiveService(service)) {
@@ -108,31 +103,23 @@ public class DeploymentManagerImpl implements DeploymentManager {
                 }
 
                 objectMgr.setFields(service, SERVICE.SKIP, false);
-                return deploy(service, checkState, scheduleOnly);
+                return deploy(service, scheduleOnly);
             }
         });
     }
 
-    protected boolean deploy(final Service service, final boolean checkState, boolean scheduleOnly) {
+    protected boolean deploy(final Service service, boolean scheduleOnly) {
         // get existing deployment units
         ServiceDeploymentPlanner planner = getPlanner(service);
 
-        if (!checkState) {
-            activitySvc.info(planner.getStatus());
-        }
+        activitySvc.info(planner.getStatus());
 
         // don't process if there is no need to reconcile
         boolean needToReconcile = needToReconcile(service, planner);
 
         if (!needToReconcile) {
-            if (!checkState) {
-                activitySvc.info("Service already reconciled");
-            }
+            activitySvc.info("Service already reconciled");
             return false;
-        }
-
-        if (checkState) {
-            return !planner.isHealthcheckInitiailizing();
         }
 
         activateService(service);
@@ -198,12 +185,6 @@ public class DeploymentManagerImpl implements DeploymentManager {
     }
 
 
-    protected void deployUnits(ServiceDeploymentPlanner planner) {
-        /*
-         * Ask the planner to deploy more units/ remove extra units
-         */
-    }
-
     @Override
     public void deactivate(final Service service) {
         // do with lock to prevent intervention to sidekick service activate
@@ -257,7 +238,7 @@ public class DeploymentManagerImpl implements DeploymentManager {
                     activitySvc.run(service, "service.trigger", "Re-evaluating state", new Runnable() {
                         @Override
                         public void run() {
-                            activate(service, false, true);
+                            activate(service, true);
                         }
                     });
                 }
