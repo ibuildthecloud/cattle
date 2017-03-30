@@ -3,6 +3,7 @@ package io.cattle.platform.host.service;
 import io.cattle.platform.archaius.util.ArchaiusUtil;
 import io.cattle.platform.core.dao.DataDao;
 import io.cattle.platform.ssh.common.SshKeyGen;
+import io.cattle.platform.token.CACertSet;
 import io.cattle.platform.token.CertSet;
 import io.cattle.platform.token.impl.RSAKeyProvider;
 import io.cattle.platform.token.impl.RSAPrivateKeyHolder;
@@ -93,6 +94,13 @@ public class HostApiRSAKeyProvider implements RSAKeyProvider, InitializationTask
         X509Certificate clientCert = SshKeyGen.generateClientCert(subject, clientKp.getPublic(), caKp.getPrivate(), caCert, sans);
         CertSet result = new CertSet(caCert, clientCert, clientKp.getPrivate());
         return result;
+    }
+
+    @Override
+    public CACertSet generateCaCertificate() throws Exception {
+        KeyPair kp = SshKeyGen.generateKeyPair();
+        X509Certificate cert = SshKeyGen.createRootCACert(kp);
+        return new CACertSet(cert, kp.getPrivate());
     }
 
     @Override

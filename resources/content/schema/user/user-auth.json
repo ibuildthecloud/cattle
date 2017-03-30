@@ -1039,6 +1039,7 @@
         "secret" : "r",
         "secret.name": "cr",
         "secret.value": "cro",
+        "secret.generate": "cr",
 
         "secretReference" : "cr",
         "secretReference.secretId": "cr",

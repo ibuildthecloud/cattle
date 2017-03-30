@@ -33,6 +33,7 @@ import io.cattle.platform.core.addon.ServiceUpgrade;
 import io.cattle.platform.core.addon.ServiceUpgradeStrategy;
 import io.cattle.platform.core.addon.ServicesPortRange;
 import io.cattle.platform.core.addon.TargetPortRule;
+import io.cattle.platform.core.addon.TlsConfig;
 import io.cattle.platform.core.addon.Ulimit;
 import io.cattle.platform.core.addon.VirtualMachineDisk;
 import io.cattle.platform.core.addon.VolumeActivateInput;
@@ -86,6 +87,7 @@ public class CoreModelConfig {
                 CatalogTemplate.class,
                 PortRule.class,
                 TargetPortRule.class,
+                TlsConfig.class,
                 MountEntry.class,
                 NetworkPolicyRule.class,
                 NetworkPolicyRuleMember.class,

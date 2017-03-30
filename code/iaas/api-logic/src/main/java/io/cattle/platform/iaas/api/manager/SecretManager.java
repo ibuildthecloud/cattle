@@ -5,6 +5,7 @@ import io.cattle.platform.api.utils.ApiUtils;
 import io.cattle.platform.core.model.Secret;
 import io.cattle.platform.framework.secret.SecretsService;
 import io.cattle.platform.object.util.DataAccessor;
+import io.cattle.platform.token.impl.RSAKeyProvider;
 import io.github.ibuildthecloud.gdapi.exception.ClientVisibleException;
 import io.github.ibuildthecloud.gdapi.util.ResponseCodes;
 
@@ -23,6 +24,8 @@ public class SecretManager extends AbstractJooqResourceManager {
 
     @Inject
     SecretsService secretsService;
+    @Inject
+    RSAKeyProvider rsaKeyProvider;
 
     @Override
     public String[] getTypes() {
@@ -36,7 +39,13 @@ public class SecretManager extends AbstractJooqResourceManager {
 
     @Override
     protected <T> T createAndScheduleObject(Class<T> clz, Map<String, Object> properties) {
+        String generate = DataAccessor.fromMap(properties).withKey("generate").as(String.class);
         String value = DataAccessor.fromMap(properties).withKey("value").as(String.class);
+
+        if ("caBundle".equals(generate)) {
+
+        }
+
         if (StringUtils.isNotBlank(value)) {
             try {
                 String newValue = secretsService.encrypt(ApiUtils.getPolicy().getAccountId(), value);
