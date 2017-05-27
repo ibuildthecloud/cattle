@@ -153,9 +153,6 @@ def test_account_purge(admin_user_client, super_client, new_context):
     account = super_client.wait_success(account.remove())
     assert account.removed is not None
 
-    account = super_client.wait_success(account.purge())
-    assert account.state == 'purged'
-
     host = super_client.wait_success(host)
     assert host.removed is not None
 
@@ -169,9 +166,6 @@ def test_account_purge(admin_user_client, super_client, new_context):
     c2 = super_client.wait_success(c2)
     assert c2.removed is not None
     assert c2.state == 'removed'
-
-    c1 = super_client.wait_success(c1.purge())
-    assert c1.state == 'purged'
 
     volumes = c1.volumes()
     assert len(volumes) == 0

@@ -3,8 +3,6 @@ import json
 
 from cattle import ApiError, ClientApiError
 from common_fixtures import *  # NOQA
-from datetime import timedelta
-import time
 
 
 def test_container_create_count(client, context):

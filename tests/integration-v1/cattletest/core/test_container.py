@@ -2,8 +2,6 @@ import json
 
 from cattle import ApiError
 from common import *  # NOQA
-from datetime import timedelta
-import time
 
 
 def test_container_create_count(client, context):
