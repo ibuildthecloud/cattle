@@ -257,12 +257,11 @@ def test_docker_purge(docker_client):
 def safe_purge(c, docker_client):
     try:
         c = docker_client.wait_success(c)
-        c.purge()
     except (ApiError, AttributeError):
         # It's possible for the container to already have been purged
         pass
     c = docker_client.wait_success(c)
-    assert c.state == 'purged'
+    assert c.removed is not None
     return c
 
 
