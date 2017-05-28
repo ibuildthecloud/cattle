@@ -125,12 +125,12 @@ public class InatorLifecycleManager implements AnnotatedEventListener {
         }
     }
 
-    @EventHandler
+    @EventHandler(poolKey="reconcile")
     public void serviceUpdate(ConfigUpdate update) {
         runUpdate(update, Service.class);
     }
 
-    @EventHandler
+    @EventHandler(poolKey="reconcile")
     public void deploymentUnitUpdate(ConfigUpdate update) {
         runUpdate(update, DeploymentUnit.class);
     }

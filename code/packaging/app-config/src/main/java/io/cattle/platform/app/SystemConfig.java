@@ -139,6 +139,14 @@ public class SystemConfig {
     }
 
     @Bean
+    NamedExecutorService reconcile(ExtensionManagerImpl em,  @Qualifier("ReconcileExecutorService") ExecutorService es) {
+        NamedExecutorService nes = new NamedExecutorService();
+        nes.setName("reconcile");
+        nes.setExecutorService(es);
+        return nes;
+    }
+
+    @Bean
     ListeningExecutorService CoreListeningExecutorService(@Qualifier("CoreExecutorService") ExecutorService es) {
         return MoreExecutors.listeningDecorator(es);
     }
@@ -163,6 +171,11 @@ public class SystemConfig {
     @Bean
     SpringConfigurableExecutorService ProcessBlockingExecutorService() throws MalformedObjectNameException {
         return SpringConfigurableExecutorService.byName("ProcessBlockingExecutorService", new ThreadPoolExecutor.DiscardPolicy());
+    }
+
+    @Bean
+    SpringConfigurableExecutorService ReconcileExecutorService() throws MalformedObjectNameException {
+        return SpringConfigurableExecutorService.byName("ReconcileExecutorService", new ThreadPoolExecutor.DiscardPolicy());
     }
 
     @Bean
