@@ -1,0 +1,203 @@
+containers:
+  asdf:
+    labels:
+
+    annotations:
+
+    child_annotations:
+      ingress:
+      service:
+
+    restart: always|on-failure|never  # dropped on-failure:5
+    terminationGracePeriodSeconds: 30  # was stop_grace_period
+    activeDeadlineSeconds: 5s
+    dnsPolicy: cluster-first|default|nil # was label
+    net: host|"pod" # no more none, bridge, managed
+    pid: host|"pod" # defaults to pod
+    ipc: host|"pod"
+    uid: 0 # was user, names no longer supported
+    gid: # optionally just a number
+    - 4
+    - 5
+    - 6
+    fs_gid: 123 # chgrp volumes
+    imagePullSecrets:
+    - asdf
+    - bar
+    - empty is "auto"
+    hostname: asdfasdf # no uts or container id
+    subdomain: blah.com or above after . # can you have dots in this? drop domain
+    host_aliases:
+    - "somehost:162.242.195.82"
+    - "otherhost:50.31.209.229"
+
+    deployment:
+      batch_size: 5 -- nilable
+      global: true
+      scale: 2
+      cron: * *
+      ordered: true
+      quorum: ??
+      job: true
+
+
+    scheduling:
+      antiAffinity: preferred|required
+      node:
+        name: foo
+        require_all:
+        - a in (a,b,c) && asdf
+        - a notin (a,b,c) 
+        - a
+        - !a
+        - a>5
+        - a=5
+        - a!=5
+        - a<6
+        require_any:
+        - a in (a,b,c) && asdf
+        - a notin (a,b,c) 
+        - a
+        - !a
+        - a>5
+        - a=5
+        - a!=5
+        - a<6
+        preferred:
+        - a in (a,b,c) && asdf
+        - a notin (a,b,c) 
+        - a
+        - !a
+        - a>5
+        - a=5
+        - a!=5
+        - a<6
+      tolerate:
+      - * # key: "", value: "", effect:NoSchedule
+      - key # keq: key, operator=exists, value ="" effect=NoSchedule
+      - key=value:NoSchedule
+      - key=value:NoExecute
+      scheduler: asdf
+      priority: 42
+      priorityClassName: asdfasdf
+
+    pod_spec: {} backdoor
+
+    # start container fields
+    image:
+    entry_point:
+    command:  # alias args to command
+    environment_from: # alias env_from
+    - source: secret  # --env-from secret/foo,prefix=BAR_,optional
+      sourceName: my-secret
+      prefix: BAR_
+      optional: true
+    - source: secret  # --env-from secret/foo,prefix=BAR_,optional,divisor=4
+      sourceName: my-secret
+      sourceKey: asdf
+      targetKey: asdf
+      optional: true
+    environment: # env
+      key: value
+    resources:
+      cpu: 
+        request: 
+        limit:
+      memory:
+        request: 
+        limit:
+      nvidiaGpu:
+        request: 
+        limit:
+    volumes:
+    - source: asdf  # -v /asdf:/asdf:ro,rshared
+      target: /tmp
+      readOnly: true
+      subPath: /blah
+      propagation: rslave|rshared
+    healthcheck:
+      initialDelaySeconds: 1
+      timeoutSeconds: 1
+      periodSeconds: 1
+      successThreshold: 1
+      failureThreshold: 1
+      command: foo
+      scheme: http|https|tcp
+      path:
+      port:
+      headers:
+        key: value
+    post_start:
+      command: foo
+      scheme: http|https|tcp
+      path:
+      port:
+      headers:
+        key: value
+    pre_stop:
+      command: foo
+      scheme: http|https|tcp
+      path:
+      port:
+      headers:
+        key: value
+    working_dir:
+    ports:
+      1.1.1.1:80:80
+    expose:
+      80/tcp
+    terminationMessagePath: asdf
+    terminationMessagePolicy: file|log
+    pullPolicy: always|never|ifnotpresent
+    cap_add:
+    cap_drop:
+    privileged:
+    read_only: true
+    stdin: true
+    stdinOnce: true
+    tty: true
+
+    # end container fields
+    #
+    sidekicks:
+      asdf:
+        initContainer: true
+      bar:
+        image: asdf
+
+    tbd
+      node_selector
+      service account
+
+
+secrets:
+  foo:
+    .....
+
+dns:
+  combined:
+  - 1.1.1.1
+  - yahoo.com
+  - foo=bar
+  - container foo?
+  bar:
+    ips:
+    - 1.1.1.1
+  baz:
+    host: asdf.com
+  foo:
+    containers:
+      - asdf
+      - bar
+    selector:
+      a: in b, c
+
+volumes:
+  foo:
+    scope: cluster|namespace|deployment|scale|pod
+    external: foo
+    storage: 5Gi
+    ephemeral_storage: 5Gi
+    access_mode: ReadWriteOnce|ReadOnlyMany|ReadWriteMany
+    class: fast
+    --allK8sOptions--
