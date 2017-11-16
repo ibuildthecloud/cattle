@@ -38,6 +38,8 @@ func main() {
 		panic(err)
 	}
 
+	server.Resolver = api.NewResolver(server.Resolver)
+
 	api.PostSetup(k8sClient, schemas)
 
 	fmt.Println("Listening on 0.0.0.0:1234")
