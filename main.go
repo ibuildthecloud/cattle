@@ -16,7 +16,6 @@ import (
 )
 
 func main() {
-
 	config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
 	if err != nil {
 		panic(err)
@@ -39,24 +38,7 @@ func main() {
 		panic(err)
 	}
 
-	//sgClient, err := v3.NewScalingGroupClient("", *config)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//controller, err := sgClient.Controller()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//controller.AddHandler(func(key string, sg *v3.ScalingGroup) error {
-	//	fmt.Println("changed:", key, sg)
-	//	return nil
-	//})
-	//
-	//if err := controller.Start(1, context.Background()); err != nil {
-	//	panic(err)
-	//}
+	api.PostSetup(k8sClient, schemas)
 
 	fmt.Println("Listening on 0.0.0.0:1234")
 	if err := http.ListenAndServe("0.0.0.0:1234", server); err != nil {

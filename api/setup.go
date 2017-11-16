@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/rancher/cattle/api/workload"
 	"github.com/rancher/norman/store/proxy"
 	"github.com/rancher/norman/types"
 	"github.com/rancher/types/apis/workload.cattle.io/v1/schema"
@@ -12,9 +13,13 @@ func Setup(k8sClient *rest.RESTClient, schemas *types.Schemas) {
 	Namespace(k8sClient, schemas)
 	Node(k8sClient, schemas)
 	Pod(k8sClient, schemas)
-	ReplicaSet(k8sClient, schemas)
+	//ReplicaSet(k8sClient, schemas)
 	Deployment(k8sClient, schemas)
 	StatefulSet(k8sClient, schemas)
+}
+
+func PostSetup(k8sClient *rest.RESTClient, schemas *types.Schemas) {
+	Workload(k8sClient, schemas)
 }
 
 func Namespace(k8sClient *rest.RESTClient, schemas *types.Schemas) {
@@ -55,6 +60,17 @@ func Deployment(k8sClient *rest.RESTClient, schemas *types.Schemas) {
 		"v1beta2",
 		"Deployment",
 		"deployments")
+}
+
+func Workload(k8sClient *rest.RESTClient, schemas *types.Schemas) {
+	schema := schemas.Schema(&schema.Version, "workload")
+	deploymentSchema := schemas.Schema(&schema.Version, "deployment")
+	schema.Store = &workload.Store{
+		WorkloadStore: schema.Store,
+		Schemas: []*types.Schema{
+			deploymentSchema,
+		},
+	}
 }
 
 func StatefulSet(k8sClient *rest.RESTClient, schemas *types.Schemas) {
