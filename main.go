@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/rancher/cattle/api"
+	"github.com/rancher/cattle/store"
+	normanapi "github.com/rancher/norman/api"
 	"github.com/rancher/norman/server"
 	"github.com/rancher/norman/types"
 	authzSchema "github.com/rancher/types/apis/authorization.cattle.io/v1/schema"
@@ -16,6 +18,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
 	if err != nil {
 		panic(err)
@@ -31,16 +35,15 @@ func main() {
 		AddSchemas(clusterSchema.Schemas).
 		AddSchemas(authzSchema.Schemas)
 
-	api.Setup(k8sClient, schemas)
+	api.Setup(ctx, apiExtClient, k8sClient, schemas)
 
-	server, err := server.NewAPIServerFromClients(context.Background(), k8sClient, apiExtClient, schemas)
-	if err != nil {
+	server := normanapi.NewAPIServer()
+	server.Resolver = api.NewResolver(server.Resolver)
+	server.StoreWrapper = store.ProjectSetter(server.StoreWrapper)
+
+	if err := server.AddSchemas(schemas); err != nil {
 		panic(err)
 	}
-
-	server.Resolver = api.NewResolver(server.Resolver)
-
-	api.PostSetup(k8sClient, schemas)
 
 	fmt.Println("Listening on 0.0.0.0:1234")
 	if err := http.ListenAndServe("0.0.0.0:1234", server); err != nil {
